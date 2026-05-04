@@ -44,21 +44,50 @@ Planned stack:
 
 ## Local Development
 
-This repository currently contains documentation only. The implementation phase should scaffold the app after the MVP specification is approved.
-
-Expected future setup:
+Install dependencies:
 
 ```bash
 pnpm install
+```
+
+Run the development server:
+
+```bash
 pnpm dev
 ```
 
-Expected future build:
+Run the verification suite:
+
+```bash
+pnpm test
+pnpm lint
+pnpm build
+```
+
+Run the production build locally:
 
 ```bash
 pnpm build
 pnpm start
 ```
+
+## Current Implementation State
+
+Phase 1 is implemented:
+
+- Strict TypeScript project scaffold.
+- Deterministic TypeScript memory simulation.
+- Domain contracts for commands, snapshots, diagnostics, stack frames, heap blocks, pointers, and values.
+- Four MVP scenario fixtures.
+- Unit tests for simulation behavior and deterministic explanations.
+- Root debug view that renders scenario summaries from real snapshots.
+
+Not implemented yet:
+
+- Canvas visualizer.
+- WASM acceleration.
+- Web Worker execution.
+- Future modules.
 
 ## Documentation Map
 
@@ -71,4 +100,3 @@ Start here:
 - `docs/mvp/01-memory-engine-functional-spec.md`: MVP feature specification.
 - `docs/mvp/02-memory-engine-roadmap.md`: three-phase MVP roadmap.
 - `docs/future-modules/01-expansion-backlog.md`: future module documentation.
-
