@@ -57,9 +57,12 @@ pnpm build
 
 ## Pending
 
-- Commit and push Phase 1.
 - Start Phase 2 planning before implementing Canvas.
 - Add browser smoke testing during Phase 2.
+
+## Git State
+
+Phase 1 was committed and pushed to `origin/main`.
 
 ## Next Prompt Recommended
 
@@ -71,4 +74,3 @@ Fase actual: Phase 2 planning.
 
 Planifica el visualizador Canvas usando los snapshots existentes de Phase 1. No implementes WASM, Web Workers ni modulos futuros.
 ```
-
