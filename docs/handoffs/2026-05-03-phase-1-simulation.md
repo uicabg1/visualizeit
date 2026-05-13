@@ -37,7 +37,6 @@ Implement the Phase 1 deterministic TypeScript simulation foundation for the Vis
 - `features/memory-engine/simulation/memoryEngine.test.ts`
 - `docs/checkpoints/current-state.md`
 - `docs/decisions/adr-001-typescript-simulation-before-wasm.md`
-- `docs/superpowers/plans/2026-05-03-phase-1-memory-engine.md`
 
 ## Decisions
 
@@ -64,10 +63,10 @@ pnpm build
 
 Phase 1 was committed and pushed to `origin/main`.
 
-## Next Prompt Recommended
+## Next Steps
 
 ```text
-Lee docs/chatgpt-context/metodologia.md y docs/checkpoints/current-state.md.
+Lee primero `docs/checkpoints/current-state.md`.
 
 Proyecto: VisualizeIT.
 Fase actual: Phase 2 planning.

@@ -14,10 +14,21 @@ export const explainEvent = (snapshot: MemorySnapshot): string[] => {
 
   if (command?.type === "ENTER_FUNCTION") {
     explanations.push(`Stack frame for ${command.functionName} pushed. Locals will live until the function returns.`);
+    const recursiveDepth = snapshot.stackFrames.filter((f) => f.functionName === command.functionName).length;
+    if (recursiveDepth > 1) {
+      explanations.push(`Recursive call — call stack is now ${snapshot.stackFrames.length} frames deep.`);
+      if (snapshot.event.label.includes("base case")) {
+        explanations.push("Base case reached — no further recursion.");
+      }
+    }
   }
 
   if (command?.type === "EXIT_FUNCTION") {
     explanations.push("Stack frame popped. Locals released; pointers into this frame become invalid.");
+    const returnMatch = snapshot.event.label.match(/returns (\S+)/);
+    if (returnMatch) {
+      explanations.push(`Returns ${returnMatch[1]} — this frame is unwound from the call stack.`);
+    }
   }
 
   if (command?.type === "DECLARE_VARIABLE") {
@@ -53,24 +64,24 @@ export const explainEvent = (snapshot: MemorySnapshot): string[] => {
   }
 
   for (const diagnostic of snapshot.diagnostics) {
-    if (diagnostic.type === "DANGLING_POINTER" && diagnostic.targetLabel) {
-      explanations.push(`${diagnostic.targetLabel} still points at released memory, so it is dangling.`);
+    if (diagnostic.type === "MEMORY_LEAK") {
+      explanations.push("Memory leak — this block has no live pointer references and cannot be freed.");
+    }
+
+    if (diagnostic.type === "DANGLING_POINTER") {
+      explanations.push(`Dangling pointer — ${diagnostic.targetLabel ?? "a pointer"} points to memory that was already freed.`);
     }
 
     if (diagnostic.type === "DOUBLE_FREE") {
-      explanations.push("The same heap block was released more than once.");
-    }
-
-    if (diagnostic.type === "MEMORY_LEAK") {
-      explanations.push(`${diagnostic.targetLabel ?? "A heap block"} is allocated but no live pointer can reach it.`);
+      explanations.push("Double free — freeing the same block twice is undefined behavior.");
     }
 
     if (diagnostic.type === "NULL_POINTER_DEREFERENCE") {
-      explanations.push(`${diagnostic.targetLabel ?? "A pointer"} is null, so reading through it is invalid.`);
+      explanations.push("Null dereference — reading or writing through a null pointer crashes the program.");
     }
 
     if (diagnostic.type === "USE_AFTER_FREE") {
-      explanations.push(`${diagnostic.targetLabel ?? "A pointer"} tries to use memory after it was freed.`);
+      explanations.push("Use after free — accessing freed memory is undefined behavior.");
     }
 
     if (diagnostic.type === "HEAP_FRAGMENTATION") {

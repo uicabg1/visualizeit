@@ -110,6 +110,6 @@ flowchart TB
 6. Canvas renders the visual memory layout.
 7. The pedagogy layer attaches explanations and warnings.
 
-## AI-Augmented Boundary
+## Correctness Boundary
 
-AI assistance is allowed for explanations, summaries, guided hints, and future adaptive learning flows. It must not be required for correctness. The simulation engine remains deterministic and testable without any LLM dependency.
+Explanations, summaries, and guided hints are optional augmentation layers. They must not be required for correctness. The simulation engine remains deterministic and testable independently.

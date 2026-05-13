@@ -110,7 +110,7 @@ Diagnostics should be educational, not alarmist. Each diagnostic should answer:
 - User-submitted arbitrary C execution.
 - 3D memory visualization.
 - Multiplayer or accounts.
-- Production LLM tutoring.
+- Production AI tutoring integration.
 
 ## MVP Definition Of Done
 

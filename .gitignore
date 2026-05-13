@@ -30,3 +30,18 @@ yarn-error.log*
 wasm/**/build/*
 !wasm/**/build/.gitkeep
 
+.vercel
+
+# dev tooling / assistant artifacts
+.claude/
+.agents/
+skills-lock.json
+screenshot.mjs
+smoke-*.mjs
+tmp-screenshots/
+www.alg0.dev_*.png
+
+# internal workflow docs
+docs/chatgpt-context/
+docs/checkpoints/
+docs/superpowers/

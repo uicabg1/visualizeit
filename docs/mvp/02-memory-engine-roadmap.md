@@ -1,6 +1,6 @@
 # Memory Engine MVP Roadmap
 
-## Phase 1: Deterministic Simulation Foundation
+## Phase 1: Deterministic Simulation Foundation ✅ DONE (2026-05-03)
 
 Goal: prove the memory model before building sophisticated visuals.
 
@@ -20,7 +20,10 @@ Success criteria:
 - Leaks, dangling pointers, and double free can be detected.
 - The implementation does not depend on Canvas, React, or WASM yet.
 
-## Phase 2: Interactive Canvas Visualizer
+## Phase 2: Interactive Canvas Visualizer ✅ DONE (2026-05-04)
+
+> Phase 2.1 — alg0.dev Visual Alignment ✅ DONE (2026-05-10)
+> Phase 2.2 — Brand Identity & Visual Refinement 🔵 ACTIVE (2026-05-11)
 
 Goal: turn simulation snapshots into a polished interactive learning experience.
 
@@ -41,7 +44,7 @@ Success criteria:
 - Timeline scrubbing does not break visual state.
 - UI state remains separate from simulation state.
 
-## Phase 3: WASM Acceleration And Portfolio Hardening
+## Phase 3: WASM Acceleration And Portfolio Hardening ⏳ NOT STARTED
 
 Goal: demonstrate low-level performance engineering and prepare the demo for corporate portfolio use.
 

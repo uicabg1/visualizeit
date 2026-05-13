@@ -154,9 +154,126 @@ describe("explainEvent", () => {
 
     expect(explanation).toEqual(
       expect.arrayContaining([
-        "p still points at released memory, so it is dangling.",
-        "The same heap block was released more than once."
+        "Dangling pointer — p points to memory that was already freed.",
+        "Double free — freeing the same block twice is undefined behavior."
       ])
     );
+  });
+
+  it("explains recursive ENTER_FUNCTION with depth", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main", label: "Enter main" },
+      { type: "ENTER_FUNCTION", functionName: "factorial", label: "Call factorial(3)" },
+      { type: "ENTER_FUNCTION", functionName: "factorial", label: "Call factorial(2)" }
+    ];
+    const result = explainEvent(snapshotAt(commands, 3));
+    expect(result).toContain("Stack frame for factorial pushed. Locals will live until the function returns.");
+    expect(result).toContain("Recursive call — call stack is now 3 frames deep.");
+  });
+
+  it("explains base case on recursive ENTER_FUNCTION", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main", label: "Enter main" },
+      { type: "ENTER_FUNCTION", functionName: "factorial", label: "Call factorial(3)" },
+      { type: "ENTER_FUNCTION", functionName: "factorial", label: "Call factorial(1) — base case" }
+    ];
+    const result = explainEvent(snapshotAt(commands, 3));
+    expect(result).toContain("Base case reached — no further recursion.");
+  });
+
+  it("appends MEMORY_LEAK hint when diagnostic present", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main", label: "Enter main" },
+      { type: "DECLARE_VARIABLE", name: "leaked", dataType: "int *", label: "Declare leaked" },
+      {
+        type: "MALLOC",
+        target: { kind: "variable", name: "leaked" },
+        size: 4,
+        label: "Allocate int"
+      },
+      {
+        type: "ASSIGN_POINTER",
+        target: { kind: "variable", name: "leaked" },
+        source: { kind: "null" },
+        label: "leaked = NULL"
+      }
+    ];
+    const snap = getFinalSnapshot(runMemoryProgram(commands));
+    expect(snap.diagnostics.some((d) => d.type === "MEMORY_LEAK")).toBe(true);
+    expect(explainEvent(snap)).toContain("Memory leak — this block has no live pointer references and cannot be freed.");
+  });
+
+  it("appends DANGLING_POINTER hint with variable name", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main", label: "Enter main" },
+      { type: "DECLARE_VARIABLE", name: "p", dataType: "int *", label: "Declare p" },
+      {
+        type: "MALLOC",
+        target: { kind: "variable", name: "p" },
+        size: 4,
+        label: "Allocate int"
+      },
+      { type: "FREE", pointer: { kind: "variable", name: "p" }, label: "Free int" }
+    ];
+    const snap = getFinalSnapshot(runMemoryProgram(commands));
+    expect(explainEvent(snap)).toContain("Dangling pointer — p points to memory that was already freed.");
+  });
+
+  it("appends DOUBLE_FREE hint when block freed twice", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main", label: "Enter main" },
+      { type: "DECLARE_VARIABLE", name: "p", dataType: "int *", label: "Declare p" },
+      {
+        type: "MALLOC",
+        target: { kind: "variable", name: "p" },
+        size: 4,
+        label: "Allocate int"
+      },
+      { type: "FREE", pointer: { kind: "variable", name: "p" }, label: "Free int" },
+      { type: "FREE", pointer: { kind: "variable", name: "p" }, label: "Free int again" }
+    ];
+    const snapshots = runMemoryProgram(commands);
+    const snap = snapshots[snapshots.length - 1]!;
+    expect(explainEvent(snap)).toContain("Double free — freeing the same block twice is undefined behavior.");
+  });
+
+  it("appends NULL_POINTER_DEREFERENCE hint on read through null pointer", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main", label: "Enter main" },
+      { type: "DECLARE_VARIABLE", name: "p", dataType: "int *", label: "Declare p" },
+      { type: "READ_VALUE", source: { kind: "variable", name: "p" }, label: "Read p" }
+    ];
+    const snap = getFinalSnapshot(runMemoryProgram(commands));
+    expect(snap.diagnostics.some((d) => d.type === "NULL_POINTER_DEREFERENCE")).toBe(true);
+    expect(explainEvent(snap)).toContain("Null dereference — reading or writing through a null pointer crashes the program.");
+  });
+
+  it("appends USE_AFTER_FREE hint on read through freed pointer", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main", label: "Enter main" },
+      { type: "DECLARE_VARIABLE", name: "p", dataType: "int *", label: "Declare p" },
+      {
+        type: "MALLOC",
+        target: { kind: "variable", name: "p" },
+        size: 4,
+        label: "Allocate int"
+      },
+      { type: "FREE", pointer: { kind: "variable", name: "p" }, label: "Free int" },
+      { type: "READ_VALUE", source: { kind: "variable", name: "p" }, label: "Read p (dangling)" }
+    ];
+    const snap = getFinalSnapshot(runMemoryProgram(commands));
+    expect(snap.diagnostics.some((d) => d.type === "USE_AFTER_FREE")).toBe(true);
+    expect(explainEvent(snap)).toContain("Use after free — accessing freed memory is undefined behavior.");
+  });
+
+  it("explains EXIT_FUNCTION with return value from label", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main", label: "Enter main" },
+      { type: "ENTER_FUNCTION", functionName: "factorial", label: "Call factorial(1)" },
+      { type: "EXIT_FUNCTION", label: "factorial(1) returns 1" }
+    ];
+    const result = explainEvent(snapshotAt(commands, 3));
+    expect(result).toContain("Stack frame popped. Locals released; pointers into this frame become invalid.");
+    expect(result).toContain("Returns 1 — this frame is unwound from the call stack.");
   });
 });

@@ -1,5 +1,7 @@
 # VisualizeIT
 
+**[Live Demo →](https://visualizeit-uicabgadiel67-1227s-projects.vercel.app)**
+
 VisualizeIT is a high-performance interactive web platform for explaining dense technical concepts through real-time visual simulation. The first MVP focuses on a low-level C memory visualizer that demonstrates stack frames, heap allocation, pointers, structs, fragmentation, leaks, and deterministic replay of memory operations.
 
 The project is designed as a portfolio-grade engineering case study: not just a beautiful interface, but a client-side system with clear simulation boundaries, measurable performance targets, and a modular architecture ready for future educational engines.
@@ -93,7 +95,7 @@ Not implemented yet:
 
 Start here:
 
-- `docs/00-context-index.md`: token-efficient reading guide for ChatGPT sessions.
+- `docs/00-context-index.md`: documentation index and context guide.
 - `docs/architecture/01-system-architecture.md`: system architecture document with Mermaid diagram.
 - `docs/architecture/02-directory-structure.md`: planned Next.js project structure.
 - `docs/architecture/03-performance-and-simulation-strategy.md`: performance, WASM, workers, and replay strategy.

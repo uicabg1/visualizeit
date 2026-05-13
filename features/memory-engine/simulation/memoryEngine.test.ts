@@ -116,8 +116,30 @@ describe("memory engine simulation", () => {
     );
   });
 
-  it("ships four deterministic MVP scenarios with readable labels", () => {
-    expect(memoryEngineScenarios).toHaveLength(4);
+  it("emits releasedFrames in EXIT_FUNCTION snapshot with last-known locals", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main" },
+      {
+        type: "DECLARE_VARIABLE",
+        name: "x",
+        dataType: "int",
+        initialValue: { kind: "number", value: 1 }
+      },
+      { type: "EXIT_FUNCTION" }
+    ];
+
+    const snapshots = runMemoryProgram(commands);
+
+    expect(snapshots[2]?.releasedFrames).toHaveLength(0);
+    expect(snapshots[3]?.releasedFrames).toHaveLength(1);
+    expect(snapshots[3]?.releasedFrames[0]).toMatchObject({
+      functionName: "main",
+      variables: [{ name: "x", dataType: "int" }]
+    });
+  });
+
+  it("ships seven deterministic MVP scenarios with readable labels", () => {
+    expect(memoryEngineScenarios).toHaveLength(7);
 
     for (const scenario of memoryEngineScenarios) {
       const firstRun = runMemoryProgram(scenario.commands);
@@ -127,6 +149,69 @@ describe("memory engine simulation", () => {
       expect(firstRun).toHaveLength(scenario.commands.length + 1);
       expect(scenario.commands.every((command) => command.label.length > 0)).toBe(true);
     }
+  });
+
+  it("pointer-arithmetic: heap block has 3 written fields after writes, freed at end", () => {
+    const scenario = memoryEngineScenarios.find((s) => s.id === "pointer-arithmetic");
+    if (!scenario) throw new Error("pointer-arithmetic scenario not found");
+
+    const snapshots = runMemoryProgram(scenario.commands);
+
+    // snapshot[6] = after WRITE arr[2]=30 (initial + 6 commands)
+    const afterWritesSnapshot = snapshots[6];
+    expect(afterWritesSnapshot?.heapBlocks[0]).toMatchObject({
+      id: "heap-1",
+      allocated: true,
+      label: "int[3]"
+    });
+    expect(afterWritesSnapshot?.heapBlocks[0]?.fields[0]?.value).toEqual({ kind: "number", value: 10 });
+    expect(afterWritesSnapshot?.heapBlocks[0]?.fields[1]?.value).toEqual({ kind: "number", value: 20 });
+    expect(afterWritesSnapshot?.heapBlocks[0]?.fields[2]?.value).toEqual({ kind: "number", value: 30 });
+
+    const final = getFinalSnapshot(snapshots);
+    expect(final.heapBlocks[0]?.allocated).toBe(false);
+  });
+
+  it("linked-list-traversal: two nodes allocated with correct field values, pointer chain connected, both freed at end", () => {
+    const scenario = memoryEngineScenarios.find((s) => s.id === "linked-list-traversal");
+    if (!scenario) throw new Error("linked-list-traversal scenario not found");
+
+    const snapshots = runMemoryProgram(scenario.commands);
+
+    // snapshot[4] = after MALLOC head — heap-1 exists with value=1, next=null
+    const afterHeadMalloc = snapshots[4];
+    expect(afterHeadMalloc?.heapBlocks[0]).toMatchObject({ id: "heap-1", allocated: true, label: "struct Node" });
+    expect(afterHeadMalloc?.heapBlocks[0]?.fields[0]?.value).toEqual({ kind: "number", value: 1 });
+
+    // snapshot[5] = after MALLOC curr — heap-2 exists with value=2, next=null
+    const afterCurrMalloc = snapshots[5];
+    expect(afterCurrMalloc?.heapBlocks[1]).toMatchObject({ id: "heap-2", allocated: true, label: "struct Node" });
+    expect(afterCurrMalloc?.heapBlocks[1]?.fields[0]?.value).toEqual({ kind: "number", value: 2 });
+
+    // snapshot[6] = after ASSIGN_POINTER head->next = curr — pointer chain established
+    const afterLink = snapshots[6];
+    const headNextField = afterLink?.heapBlocks[0]?.fields.find((f) => f.name === "next");
+    expect(headNextField?.value).toMatchObject({ kind: "pointer", targetBlockId: "heap-2" });
+
+    // both nodes freed at end
+    const final = getFinalSnapshot(snapshots);
+    expect(final.heapBlocks[0]?.allocated).toBe(false);
+    expect(final.heapBlocks[1]?.allocated).toBe(false);
+    expect(final.stackFrames).toHaveLength(0);
+  });
+
+  it("recursive-stack: peak frame count = 4, final frame count = 0, no diagnostics", () => {
+    const scenario = memoryEngineScenarios.find((s) => s.id === "recursive-stack");
+    if (!scenario) throw new Error("recursive-stack scenario not found");
+
+    const snapshots = runMemoryProgram(scenario.commands);
+
+    const peakFrameCount = Math.max(...snapshots.map((s) => s.stackFrames.length));
+    expect(peakFrameCount).toBe(4);
+
+    const final = getFinalSnapshot(snapshots);
+    expect(final.stackFrames).toHaveLength(0);
+    expect(final.diagnostics).toHaveLength(0);
   });
 });
 

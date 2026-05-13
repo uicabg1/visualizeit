@@ -1,13 +1,14 @@
 import { describeCommand, describeTarget, type MemoryCommand } from "../domain/commands";
 import { createDiagnostic, type MemoryDiagnostic } from "../domain/diagnostics";
 import type { HeapBlock, MemoryAddress, MemoryValue, StackFrame, StructField, ValueTarget } from "../domain/types";
-import type { MemorySnapshot } from "../domain/snapshots";
+import type { MemorySnapshot, ReleasedStackFrame } from "../domain/snapshots";
 
 type MutableState = {
   stackFrames: StackFrame[];
   heapBlocks: HeapBlock[];
   eventDiagnostics: MemoryDiagnostic[];
   nextAddress: number;
+  lastReleasedFrame: StackFrame | null;
 };
 
 const initialAddress = 0x1000;
@@ -25,7 +26,8 @@ const createInitialState = (): MutableState => ({
   stackFrames: [],
   heapBlocks: [],
   eventDiagnostics: [],
-  nextAddress: initialAddress
+  nextAddress: initialAddress,
+  lastReleasedFrame: null
 });
 
 const cloneValue = (value: MemoryValue): MemoryValue => structuredClone(value) as MemoryValue;
@@ -145,6 +147,8 @@ const addEventDiagnostic = (state: MutableState, diagnostic: MemoryDiagnostic): 
 };
 
 const applyCommand = (state: MutableState, command: MemoryCommand, stepIndex: number): void => {
+  state.lastReleasedFrame = null;
+
   switch (command.type) {
     case "ENTER_FUNCTION": {
       state.stackFrames.push({
@@ -156,6 +160,8 @@ const applyCommand = (state: MutableState, command: MemoryCommand, stepIndex: nu
     }
 
     case "EXIT_FUNCTION": {
+      const frame = state.stackFrames.at(-1) ?? null;
+      state.lastReleasedFrame = frame ? (structuredClone(frame) as StackFrame) : null;
       state.stackFrames.pop();
       return;
     }
@@ -423,6 +429,9 @@ const createSnapshot = (state: MutableState, stepIndex: number, command: MemoryC
   const heapBlocks = normalizeBlocks(state.heapBlocks);
   const stackFrames = normalizeFrames(state.stackFrames, heapBlocks);
   const snapshotBase = { stackFrames, heapBlocks };
+  const releasedFrames: ReleasedStackFrame[] = state.lastReleasedFrame
+    ? [{ functionName: state.lastReleasedFrame.functionName, variables: state.lastReleasedFrame.variables }]
+    : [];
 
   return {
     stepIndex,
@@ -439,6 +448,7 @@ const createSnapshot = (state: MutableState, stepIndex: number, command: MemoryC
         },
     stackFrames,
     heapBlocks,
+    releasedFrames,
     diagnostics: dedupeDiagnostics([...state.eventDiagnostics, ...deriveDiagnostics(snapshotBase)])
   };
 };

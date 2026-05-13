@@ -1,6 +1,6 @@
 # VisualizeIT Context Index
 
-Purpose: keep ChatGPT Plus conversations small by loading only the documentation needed for the current phase.
+Purpose: documentation index for loading only what is needed for the current phase.
 
 ## Project Decision
 
@@ -10,9 +10,19 @@ VisualizeIT will be built as a modular technical visualization platform, but the
 
 IPv6/SLAAC, discrete mathematics, and XAI remain future modules.
 
+## Phase Status
+
+| Phase | Status | Completed |
+|-------|--------|-----------|
+| Phase 1 — Deterministic Simulation Foundation | ✅ DONE | 2026-05-03 |
+| Phase 2 — Interactive Canvas Visualizer | ✅ DONE | 2026-05-04 |
+| Phase 2.1 — alg0.dev Visual Alignment | ✅ DONE | 2026-05-10 |
+| Phase 2.2 — Brand Identity & Visual Refinement | 🔵 ACTIVE | 2026-05-11 |
+| Phase 3 — WASM Acceleration | ⏳ NOT STARTED | — |
+
 ## Token-Saving Method
 
-Do not paste every document into one ChatGPT conversation. Use small context packs.
+Use small context packs to keep sessions focused.
 
 ### Context Pack A: Architecture
 
@@ -37,7 +47,7 @@ Include:
 
 ### Context Pack C: Implementation Planning
 
-Use when asking ChatGPT to create a coding plan.
+Use when creating a coding plan.
 
 Include:
 
@@ -55,30 +65,20 @@ Include:
 - `README.md`
 - `docs/future-modules/01-expansion-backlog.md`
 
-### Context Pack E: ChatGPT Plus Workflow
+### Context Pack F: Phase 2.2 Brand Identity & Visual Refinement
 
-Use before starting implementation in ChatGPT Plus or when context is getting messy.
+Use when executing or planning Phase 2.2 tasks (brand tokens, canvas transitions, scenario stack focus).
 
 Include:
 
-- `docs/chatgpt-context/metodologia.md`
-- `docs/chatgpt-context/02-metodo-chatgpt-plus-y-preservacion.md`
-- `docs/chatgpt-context/01-session-prompts.md`
-
-For normal task execution, prefer `docs/chatgpt-context/metodologia.md` first. Use the longer preservation document only when you need the full backup and workflow rationale.
-
-## Prompt Prefix For Future Sessions
-
-Use this short prefix before pasting one context pack:
-
-```text
-You are acting as a senior software architect and technical lead. Work only from the documents I provide in this message. Do not expand scope beyond the current MVP unless I explicitly ask. Prefer modular files, small interfaces, deterministic simulation logic, and token-efficient explanations.
-```
+- `docs/checkpoints/current-state.md`
+- `docs/handoffs/2026-05-11-phase-2-2-brand-identity.md`
+- `docs/handoffs/2026-05-11-phase-2-2-canvas-transitions.md`
+- `docs/handoffs/2026-05-11-phase-2-2-scenario-stack-focus.md`
 
 ## Guardrails
 
-- Do not ask for all project files unless necessary.
 - Do not implement future modules during the Memory Engine MVP.
-- Do not put LLM calls inside the render loop or simulation loop.
+- Do not put model inference inside the render loop or simulation loop.
 - Do not use 3D for the memory engine unless there is a clear learning benefit.
-- Keep implementation prompts focused on one phase at a time.
+- Keep implementation focused on one phase at a time.

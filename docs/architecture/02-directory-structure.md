@@ -18,8 +18,7 @@ visualizeit/
       02-memory-engine-roadmap.md
     future-modules/
       01-expansion-backlog.md
-    chatgpt-context/
-      01-session-prompts.md
+
 
   app/
     layout.tsx
@@ -129,7 +128,7 @@ visualizeit/
 
 ## Naming Policy
 
-Prefer explicit names over clever abbreviations. The goal is to make future ChatGPT sessions cheaper by letting file names communicate responsibility.
+Prefer explicit names over clever abbreviations. The goal is to make file responsibilities self-evident from the name alone.
 
 Good:
 

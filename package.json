@@ -25,6 +25,7 @@
     "eslint": "^9.39.2",
     "eslint-config-next": "15.5.15",
     "globals": "^16.5.0",
+    "puppeteer": "^24.43.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.50.0",
     "vitest": "^4.0.16"

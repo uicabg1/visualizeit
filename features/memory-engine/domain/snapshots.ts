@@ -1,6 +1,11 @@
 import type { MemoryCommand } from "./commands";
 import type { MemoryDiagnostic } from "./diagnostics";
-import type { HeapBlock, StackFrame } from "./types";
+import type { HeapBlock, StackFrame, StackVariable } from "./types";
+
+export type ReleasedStackFrame = {
+  functionName: string;
+  variables: StackVariable[];
+};
 
 export type MemoryEvent =
   | {
@@ -20,6 +25,7 @@ export type MemorySnapshot = {
   stackFrames: StackFrame[];
   heapBlocks: HeapBlock[];
   diagnostics: MemoryDiagnostic[];
+  releasedFrames: ReleasedStackFrame[];
 };
 
 export const cloneSnapshot = (snapshot: MemorySnapshot): MemorySnapshot =>
