@@ -38,6 +38,7 @@ export function MemoryWorkspace() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [playbackSpeed, setPlaybackSpeed] = useState<PlaybackSpeed>(1);
   const [containerWidth, setContainerWidth] = useState(960);
+  const [copied, setCopied] = useState(false);
   const canvasAreaRef = useRef<HTMLDivElement | null>(null);
   const isInitialMountRef = useRef(true);
   const overlayDismissRef = useRef(false);
@@ -196,7 +197,46 @@ export function MemoryWorkspace() {
             />
           </div>
 
-          <div style={{ justifySelf: "end" }}>
+          <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: "8px" }}>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                fontSize: "12px",
+                fontWeight: 500,
+                color: copied ? "var(--color-pointer)" : "var(--text-secondary)",
+                background: "none",
+                border: `1px solid ${copied ? "var(--color-pointer)" : "var(--border-default)"}`,
+                borderRadius: "var(--radius-md)",
+                padding: "4px 10px",
+                cursor: "pointer",
+                transition: "color 150ms ease, border-color 150ms ease",
+                opacity: copied ? 1 : undefined,
+              }}
+            >
+              {copied ? (
+                <>
+                  <svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true">
+                    <path d="M3 8l3.5 3.5L13 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true">
+                    <path d="M6.5 9.5a3.5 3.5 0 0 0 5 0l2-2a3.5 3.5 0 0 0-5-5l-1 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    <path d="M9.5 6.5a3.5 3.5 0 0 0-5 0l-2 2a3.5 3.5 0 0 0 5 5l1-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  Share
+                </>
+              )}
+            </button>
             <Link
               href="/about"
               style={{
