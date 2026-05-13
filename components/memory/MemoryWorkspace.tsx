@@ -31,13 +31,16 @@ export function MemoryWorkspace() {
 
   const [scenarioId, setScenarioId] = useState(initialScenarioId);
   const [stepIndex, setStepIndex] = useState(initialStep);
-  const [showOverlay, setShowOverlay] = useState(initialStep === 0);
+  const [overlayState, setOverlayState] = useState<"visible" | "exiting" | "hidden">(
+    initialStep === 0 ? "visible" : "hidden"
+  );
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [playbackSpeed, setPlaybackSpeed] = useState<PlaybackSpeed>(1);
   const [containerWidth, setContainerWidth] = useState(960);
   const canvasAreaRef = useRef<HTMLDivElement | null>(null);
   const isInitialMountRef = useRef(true);
+  const overlayDismissRef = useRef(false);
 
   const scenario = useMemo(
     () => memoryEngineScenarios.find((candidate) => candidate.id === scenarioId) ?? memoryEngineScenarios[0],
@@ -63,10 +66,18 @@ export function MemoryWorkspace() {
       : undefined;
 
   useEffect(() => {
-    if (activeStepIndex > 0 && showOverlay) {
-      setShowOverlay(false);
+    if (activeStepIndex > 0 && !overlayDismissRef.current && overlayState !== "hidden") {
+      overlayDismissRef.current = true;
+      setOverlayState("exiting");
+      const timer = setTimeout(() => setOverlayState("hidden"), 600);
+      return () => {
+        clearTimeout(timer);
+        overlayDismissRef.current = false;
+      };
     }
-  }, [activeStepIndex, showOverlay]);
+  // overlayState intentionally omitted — guard via ref prevents double-fire in strict mode
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStepIndex]);
 
   useEffect(() => {
     if (isInitialMountRef.current) {
@@ -225,7 +236,6 @@ export function MemoryWorkspace() {
             playbackSpeed={playbackSpeed}
             scene={activeScene}
             selectedId={selectedId}
-            showOverlay={showOverlay}
             stepIndex={activeStepIndex}
           />
           <StepBanner
@@ -244,6 +254,38 @@ export function MemoryWorkspace() {
           snapshot={activeSnapshot}
         />
       </div>
+
+      {overlayState !== "hidden" && renderWelcomeOverlay(overlayState === "exiting")}
     </main>
+  );
+}
+
+function overlayBg() {
+  return (
+    <div className="welcome-overlay__bg">
+      <svg viewBox="0 0 32 32" width="60" height="60" className="welcome-overlay__logo" aria-hidden="true">
+        <rect x="2" y="2" width="28" height="28" rx="6" fill="#F5B82E"/>
+        <path d="M9 9 L16 23 L23 9" stroke="#0B0D10" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        <rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="rgba(124,92,255,0.35)" strokeWidth="1"/>
+      </svg>
+      <h1 className="welcome-overlay__headline">
+        <span className="welcome-overlay__line1">Step through</span>
+        <span className="welcome-overlay__line2"><em className="welcome-overlay__accent">C</em> memory, live.</span>
+      </h1>
+      <p className="welcome-overlay__sub">7 scenarios · Stack · Heap · Pointers</p>
+      <div className="welcome-overlay__chips">
+        <span className="welcome-overlay__chip"><kbd>Space</kbd> Play</span>
+        <span className="welcome-overlay__chip"><kbd>→</kbd> Next step</span>
+      </div>
+    </div>
+  );
+}
+
+function renderWelcomeOverlay(isExiting: boolean) {
+  return (
+    <div className={`welcome-overlay${isExiting ? " is-exiting" : ""}`} aria-hidden="true">
+      <div className="welcome-overlay__panel welcome-overlay__panel--top">{overlayBg()}</div>
+      <div className="welcome-overlay__panel welcome-overlay__panel--bottom">{overlayBg()}</div>
+    </div>
   );
 }

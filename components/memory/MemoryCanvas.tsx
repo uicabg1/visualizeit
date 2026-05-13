@@ -15,10 +15,9 @@ type MemoryCanvasProps = {
   onSelect: (selected: MemorySceneSelectable | null) => void;
   stepIndex?: number;
   playbackSpeed?: PlaybackSpeed;
-  showOverlay?: boolean;
 };
 
-export function MemoryCanvas({ scene, selectedId, onSelect, stepIndex, playbackSpeed, showOverlay = false }: MemoryCanvasProps) {
+export function MemoryCanvas({ scene, selectedId, onSelect, stepIndex, playbackSpeed }: MemoryCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const prevSceneRef = useRef<MemoryScene | null>(null);
   const prevStepRef = useRef<number | null>(null);
@@ -104,21 +103,6 @@ export function MemoryCanvas({ scene, selectedId, onSelect, stepIndex, playbackS
 
   return (
     <div className="memory-canvas-shell">
-      {showOverlay && (
-        <div className="memory-canvas-overlay" aria-hidden="true">
-          <svg viewBox="0 0 32 32" width="40" height="40" aria-hidden="true">
-            <rect x="2" y="2" width="28" height="28" rx="6" fill="#F5B82E"/>
-            <path d="M9 9 L16 23 L23 9" stroke="#0B0D10" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-            <rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="rgba(124,92,255,0.35)" strokeWidth="1"/>
-          </svg>
-          <p className="memory-canvas-overlay__headline">Step through C memory, live.</p>
-          <p className="memory-canvas-overlay__hint">Press Play or use → to advance step by step.</p>
-          <div className="memory-canvas-overlay__chips">
-            <span className="memory-canvas-overlay__chip"><kbd>Space</kbd> Play</span>
-            <span className="memory-canvas-overlay__chip"><kbd>→</kbd> Next step</span>
-          </div>
-        </div>
-      )}
       <canvas
         ref={canvasRef}
         aria-label="Memory canvas"

@@ -473,6 +473,36 @@ Added keyboard shortcut support to `MemoryWorkspace.tsx`.
 
 ---
 
+## Design Spec — Welcome Overlay Redesign (Session Enhancement)
+
+**Goal:** Replace the inline canvas overlay with a fullscreen title card that splits apart (top half up, bottom half down) when the user first advances past step 0.
+
+**Visual design:**
+- `position: fixed; inset: 0; z-index: 50` — covers navbar, sidebar, everything
+- Background: `var(--bg-base)` + dot-grid + amber radial glow at ~35% vertical (above center, where logo sits) + violet depth glow
+- Logo SVG 60×60 with amber drop-shadow filter
+- Headline Syne: line 1 `"Step through"` in `--text-secondary`; line 2 `"C memory, live."` in `--text-primary` with `C` in `--accent-amber`
+- Font size `clamp(40px, 6vw, 80px)`, `letter-spacing: -0.04em`
+- Sub-label: `"7 scenarios · Stack · Heap · Pointers"` in `--text-muted`, uppercase, spaced
+- Keyboard chips (same tokens as before, slightly larger)
+- Entry: per-item stagger `overlay-item-in` (translateY 18px → 0, opacity 0→1), delays 0.05/0.15/0.25/0.38/0.48s
+
+**Split exit animation — dual panel technique:**
+- Two `overflow: hidden` panels: `.panel--top` (top 50%) and `.panel--bottom` (bottom 50%)
+- Each contains `.welcome-overlay__bg` absolutely positioned at full 100vh height — top panel's bg anchored `top: 0`, bottom panel's bg anchored `bottom: 0`
+- Content is duplicated via a `renderOverlayBg()` function — each call returns new React element
+- On `.is-exiting`: top panel `translateY(-100%)`, bottom panel `translateY(100%)` — 550ms `cubic-bezier(0.76, 0, 0.24, 1)`
+- Canvas visible below during transition, fully revealed when panels exit
+
+**State machine:** `"visible" | "exiting" | "hidden"` in `MemoryWorkspace`. When `activeStepIndex > 0 && state === "visible"` → set `"exiting"`, setTimeout 600ms → set `"hidden"` (unmount). Initializes to `"hidden"` if page loads with `?step > 0`.
+
+**Files changed:**
+- `app/globals.css` — remove old `.memory-canvas-overlay` block; add `.welcome-overlay` system
+- `components/memory/MemoryCanvas.tsx` — remove `showOverlay` prop + JSX
+- `components/memory/MemoryWorkspace.tsx` — replace `showOverlay` boolean with `overlayState` machine; add overlay JSX
+
+---
+
 ## What Was Done (Task 14)
 
 Added shareable URL state — `?scenario=<id>&step=<n>` encodes active scenario and step index so users can share a direct link to any step of any scenario.
