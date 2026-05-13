@@ -132,6 +132,7 @@ export function MemoryControls({
         aria-valuemin={1}
         aria-valuemax={totalSteps}
         aria-valuenow={stepIndex + 1}
+        style={{ "--fill-pct": `${maxStep > 0 ? (stepIndex / maxStep) * 100 : 0}%` } as React.CSSProperties}
       />
 
       <p className="memory-controls__step" aria-label={`Step ${stepIndex + 1} of ${totalSteps}`}>
