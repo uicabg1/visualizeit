@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { explainEvent } from "@/features/memory-engine/pedagogy/explainEvent";
@@ -19,14 +20,23 @@ const clampStep = (candidate: number, maxStep: number): number =>
   Math.min(Math.max(candidate, 0), maxStep);
 
 export function MemoryWorkspace() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const firstScenarioId = memoryEngineScenarios[0]?.id ?? "";
-  const [scenarioId, setScenarioId] = useState(firstScenarioId);
-  const [stepIndex, setStepIndex] = useState(0);
+  const urlScenarioId = searchParams.get("scenario");
+  const urlStep = parseInt(searchParams.get("step") ?? "", 10);
+  const initialScenarioId = memoryEngineScenarios.find((s) => s.id === urlScenarioId)?.id ?? firstScenarioId;
+  const initialStep = !isNaN(urlStep) && urlStep >= 0 ? urlStep : 0;
+
+  const [scenarioId, setScenarioId] = useState(initialScenarioId);
+  const [stepIndex, setStepIndex] = useState(initialStep);
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [playbackSpeed, setPlaybackSpeed] = useState<PlaybackSpeed>(1);
   const [containerWidth, setContainerWidth] = useState(960);
   const canvasAreaRef = useRef<HTMLDivElement | null>(null);
+  const isInitialMountRef = useRef(true);
 
   const scenario = useMemo(
     () => memoryEngineScenarios.find((candidate) => candidate.id === scenarioId) ?? memoryEngineScenarios[0],
@@ -52,10 +62,22 @@ export function MemoryWorkspace() {
       : undefined;
 
   useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
     setStepIndex(0);
     setIsPlaying(false);
     setSelectedId(null);
   }, [scenarioId]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams({ scenario: scenarioId, step: String(activeStepIndex) });
+      router.replace(`/?${params.toString()}`);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [scenarioId, activeStepIndex, router]);
 
   useEffect(() => {
     const el = canvasAreaRef.current;
@@ -67,6 +89,27 @@ export function MemoryWorkspace() {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
+        return;
+      }
+      if (e.key === " ") {
+        e.preventDefault();
+        setIsPlaying((c) => !c);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        setStepIndex((c) => clampStep(c + 1, maxStep));
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setStepIndex((c) => clampStep(c - 1, maxStep));
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [maxStep]);
 
   useEffect(() => {
     if (!isPlaying) {

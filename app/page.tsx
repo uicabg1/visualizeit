@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import { MemoryWorkspace } from "@/components/memory/MemoryWorkspace";
 
 export default function HomePage() {
-  return <MemoryWorkspace />;
+  return (
+    <Suspense>
+      <MemoryWorkspace />
+    </Suspense>
+  );
 }

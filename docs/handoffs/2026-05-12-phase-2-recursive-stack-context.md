@@ -425,33 +425,111 @@ Added static `/about` page and navbar link to VisualizeIT.
 
 ---
 
-## Task 12 — Next Session
+## What Was Done (Task 12)
+
+Added welcome empty-state overlay to the canvas area for first load.
+
+**Files changed:**
+- `components/memory/MemoryCanvas.tsx` — added `showOverlay = (stepIndex ?? 0) === 0` guard; when true, renders an absolutely-positioned `.memory-canvas-overlay` div inside `.memory-canvas-shell` with the VisualizeIT logo SVG (40×40), headline "Step through C memory, live.", hint text, and two keyboard chips `[Space] Play` / `[→] Next step`; uses `aria-hidden="true"` since it's decorative guidance
+- `app/globals.css` — added `.memory-canvas-overlay`, `@keyframes overlay-fade-in` (fade + 10px upward slide, 0.5s ease), `.memory-canvas-overlay__headline` (display font, 22px, −0.03em tracking), `.memory-canvas-overlay__hint`, `.memory-canvas-overlay__chips`, `.memory-canvas-overlay__chip`, `.memory-canvas-overlay__chip kbd` — all using existing tokens; `pointer-events: none` so overlay never blocks canvas interaction
+
+**Verification passed:**
+- `pnpm test` → 48 tests green (no changes to engine) ✅
+- `pnpm build` → clean; route `/` at 12.9 kB ✅
+- Step 0: overlay visible with logo, headline, hint, and keyboard chips ✅
+- Step 1 (after clicking Step forward): overlay gone, `main()` frame rendered correctly ✅
+- No console errors ✅
+
+**Deployed to production:** https://visualizeit-uicabgadiel67-1227s-projects.vercel.app
+
+**Screenshots saved to `tmp-screenshots/`:**
+- `task12-overlay-step0.png`
+- `task12-after-next.png`
+
+---
+
+## What Was Done (Task 13)
+
+Added keyboard shortcut support to `MemoryWorkspace.tsx`.
+
+**Files changed:**
+- `components/memory/MemoryWorkspace.tsx` — added `useEffect` with `window` `keydown` listener; maps Space → toggle play/pause (`setIsPlaying(c => !c)`), ArrowRight → `setStepIndex(c => clampStep(c + 1, maxStep))`, ArrowLeft → `setStepIndex(c => clampStep(c - 1, maxStep))`; `preventDefault()` on all three keys; skips when `target.tagName` is `INPUT`/`TEXTAREA` or `target.isContentEditable`; removes listener on cleanup; deps `[maxStep]`.
+
+**Design decisions:**
+- Used functional `setStepIndex` updater form — no dependency on `activeStepIndex`, only `maxStep` needed.
+- `target.isContentEditable` catches all `[contenteditable]` elements including nested ones.
+
+**Verification passed:**
+- `pnpm test` → 48 tests green ✅
+- `pnpm build` → clean; route `/` at 13 kB ✅
+- ArrowRight: step 1/4 → 2/4 ✅
+- ArrowLeft: step 2/4 → 1/4 ✅
+- Space play: step advanced after ~1.2s ✅
+- Space pause: step frozen for 0.8s after second press ✅
+- Deployed to Vercel production ✅
+
+**Screenshots saved to `tmp-screenshots/`:**
+- `task13-keyboard-shortcuts.png`
+
+---
+
+## What Was Done (Task 14)
+
+Added shareable URL state — `?scenario=<id>&step=<n>` encodes active scenario and step index so users can share a direct link to any step of any scenario.
+
+**Files changed:**
+- `app/page.tsx` — wrapped `<MemoryWorkspace />` in `<Suspense>` (required by Next.js App Router for `useSearchParams`)
+- `components/memory/MemoryWorkspace.tsx` — added `useSearchParams` + `useRouter` imports; computed `initialScenarioId` and `initialStep` from URL params before state initialization; added `isInitialMountRef` to skip scenario-reset effect on first mount (preserves URL-derived step); added debounced `router.replace` effect (150ms) that syncs `scenarioId` + `activeStepIndex` to URL on every change
+
+**Architecture decisions:**
+- `router.replace` (not `push`) — no history flooding; back/forward goes to the page the user came from, not between steps
+- Debounce 150ms — rapid arrow-key presses coalesce into one URL update
+- `isInitialMountRef` ref trick — skips the step-reset effect on mount so URL-derived step survives; clears on first real scenario switch so future switches do reset step
+- Invalid URL params degrade gracefully: unknown scenario → first scenario; non-numeric / negative step → step 0
+
+**Verification passed:**
+- `pnpm test` → 48 tests green ✅
+- `pnpm build` → clean, route `/` at 13.3 kB ✅
+- `/?scenario=recursive-stack&step=6` → loads step 7/12, banner "Call factorial(1) — base case", Recursive Stack selected in sidebar ✅
+- ArrowRight → URL updates from `step=6` to `step=7` ✅
+- Scenario switch → URL resets to `step=0` with new scenario ✅
+- No console errors ✅
+
+**Screenshots saved to `tmp-screenshots/`:**
+- `task14-url-load-step6.png`
+- `task14-after-arrow-right.png`
+- `task14-scenario-switch.png`
+
+**Deployed to production:** https://visualizeit-two.vercel.app
+
+---
+
+## Task 15 — Next Session
 
 > **Context:** This is VisualizeIT, a Next.js app that visualizes C memory concepts interactively. The memory engine lives in `features/memory-engine/`. The UI renders 7 scenarios from a sidebar; the canvas draws stack frames and heap blocks step-by-step with per-step line highlighting in a Code tab and pedagogical text in an Explanation tab.
 >
-> Tasks 1–11 are complete: 7 scenarios, canvas ResizeObserver fix, recursive-aware + diagnostic-aware explanations (48 tests), real C source code for all scenarios, production deployment, and a static `/about` page.
+> Tasks 1–14 are complete: 7 scenarios, canvas ResizeObserver fix, recursive-aware + diagnostic-aware explanations (48 tests), real C source code for all scenarios, production deployment, a static `/about` page, a welcome empty-state overlay, keyboard shortcuts (Space play/pause, ArrowRight/Left step), and shareable URL state (`?scenario=<id>&step=<n>`).
 >
-> **Current state:** The app is live at https://visualizeit-uicabgadiel67-1227s-projects.vercel.app. The `/about` page at `/about` lists all 7 scenarios. The next priority is improving the landing experience — when a user first opens the app, they see the first scenario (`stack-frame-basics`) at step 0 with nothing drawn. A welcome / empty state should guide them to press Play or select a scenario.
+> **Current state:** The app is live at https://visualizeit-two.vercel.app. 48 tests green. URL state syncs on every step/scenario change; loading a shared URL restores exact state.
 >
-> **Task 12:** Add a welcome empty-state overlay to the canvas area.
+> **Task 15:** Add a "Copy link" share button to the navbar. When clicked, it copies the current URL (which already encodes scenario + step) to the clipboard and shows a brief "Copied!" confirmation that reverts to the icon after 1.5s.
 >
 > **Implementation steps:**
-> 1. In `components/memory/MemoryCanvas.tsx` (or `MemoryWorkspace.tsx`), detect when `stepIndex === 0` (the initial state before any commands run).
-> 2. When `stepIndex === 0`, render a centered overlay inside `.memory-canvas-shell` with:
->    - The VisualizeIT logo SVG (same as in the navbar)
->    - A short headline: "Step through C memory, live."
->    - A one-line hint: "Press Play or use → to advance step by step."
->    - Optional: keyboard shortcut chips for Space (play) and → (next step)
-> 3. When `stepIndex > 0`, the overlay disappears and the canvas renders normally.
-> 4. Style using existing design tokens — same dark palette, `--font-display` for headline, `--text-secondary` for hint.
-> 5. Run `pnpm build` → confirm clean. Run `pnpm test` → confirm 48 tests still green.
-> 6. Deploy to Vercel: `vercel deploy --prod -y --scope uicabgadiel67-1227s-projects`.
-> 7. Verify the overlay appears on first load and disappears after stepping.
+> 1. In `components/memory/MemoryWorkspace.tsx`, add a "Copy link" button to the navbar's right slot (next to the existing "About" link). The button should use `navigator.clipboard.writeText(window.location.href)`.
+> 2. Track a `copied` boolean state in `MemoryWorkspace`. On click: set `copied = true`, copy URL, then `setTimeout(() => setCopied(false), 1500)`.
+> 3. Button label: show a link/chain SVG icon + "Share" text. While `copied === true`, show a checkmark icon + "Copied!" text instead. Animate the transition with a short opacity/transform fade using the existing CSS token system.
+> 4. Style the button to match the existing "About" link: `font-size: 12px`, `font-weight: 500`, `color: var(--text-secondary)`, `border: 1px solid var(--border-default)`, `border-radius: var(--radius-md)`, `padding: 4px 10px`. On `copied` state: border and text color shift to `var(--color-pointer)` (the blue accent already used elsewhere).
+> 5. Place the button to the left of the "About" link in the same right-slot `div`, with an 8px gap between them.
+> 6. Run `pnpm build` → confirm clean. Run `pnpm test` → confirm 48 tests still green.
+> 7. Deploy to Vercel: `vercel deploy --prod -y --scope uicabgadiel67-1227s-projects`.
+> 8. Verify with Puppeteer: click Share, wait 200ms, screenshot to confirm "Copied!" state; wait 1.6s, screenshot to confirm reverted to "Share".
 >
 > **Verification criteria:**
 > - `pnpm build` clean.
 > - `pnpm test` → 48 tests green.
-> - Overlay visible at step 0 on first load.
-> - Overlay gone after pressing → once.
-> - No regressions on any of the 7 scenarios.
+> - Share button visible in navbar, left of About link.
+> - Click → label changes to "Copied!" with blue accent styling.
+> - After 1.5s → reverts to "Share".
+> - URL copied to clipboard is the current full URL (including `?scenario=&step=`).
+> - No console errors.
 > - Upgrade this handoff for the next task (one task per session).
