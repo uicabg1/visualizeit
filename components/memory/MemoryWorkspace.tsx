@@ -31,6 +31,7 @@ export function MemoryWorkspace() {
 
   const [scenarioId, setScenarioId] = useState(initialScenarioId);
   const [stepIndex, setStepIndex] = useState(initialStep);
+  const [showOverlay, setShowOverlay] = useState(initialStep === 0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [playbackSpeed, setPlaybackSpeed] = useState<PlaybackSpeed>(1);
@@ -60,6 +61,12 @@ export function MemoryWorkspace() {
     codeLines && scenario?.stepToLine && activeCommandIndex >= 0
       ? scenario.stepToLine[activeCommandIndex]
       : undefined;
+
+  useEffect(() => {
+    if (activeStepIndex > 0 && showOverlay) {
+      setShowOverlay(false);
+    }
+  }, [activeStepIndex, showOverlay]);
 
   useEffect(() => {
     if (isInitialMountRef.current) {
@@ -218,6 +225,7 @@ export function MemoryWorkspace() {
             playbackSpeed={playbackSpeed}
             scene={activeScene}
             selectedId={selectedId}
+            showOverlay={showOverlay}
             stepIndex={activeStepIndex}
           />
           <StepBanner

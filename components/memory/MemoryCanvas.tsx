@@ -15,9 +15,10 @@ type MemoryCanvasProps = {
   onSelect: (selected: MemorySceneSelectable | null) => void;
   stepIndex?: number;
   playbackSpeed?: PlaybackSpeed;
+  showOverlay?: boolean;
 };
 
-export function MemoryCanvas({ scene, selectedId, onSelect, stepIndex, playbackSpeed }: MemoryCanvasProps) {
+export function MemoryCanvas({ scene, selectedId, onSelect, stepIndex, playbackSpeed, showOverlay = false }: MemoryCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const prevSceneRef = useRef<MemoryScene | null>(null);
   const prevStepRef = useRef<number | null>(null);
@@ -100,8 +101,6 @@ export function MemoryCanvas({ scene, selectedId, onSelect, stepIndex, playbackS
       onSelect(null);
     }
   };
-
-  const showOverlay = (stepIndex ?? 0) === 0;
 
   return (
     <div className="memory-canvas-shell">
