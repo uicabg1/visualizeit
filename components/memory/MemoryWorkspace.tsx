@@ -278,6 +278,17 @@ export function MemoryWorkspace() {
             selectedId={selectedId}
             stepIndex={activeStepIndex}
           />
+          <div className="step-dots" role="group" aria-label="Step navigation">
+            {snapshots.map((_, i) => (
+              <button
+                key={i}
+                className={`step-dots__dot${i === activeStepIndex ? " is-active" : i < activeStepIndex ? " is-past" : ""}`}
+                aria-label={`Go to step ${i + 1}`}
+                aria-current={i === activeStepIndex ? "true" : undefined}
+                onClick={() => handleStepChange(i)}
+              />
+            ))}
+          </div>
           <StepBanner
             event={activeSnapshot.event}
             stepCount={snapshots.length}
