@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-
 import { describeCommand, type MemoryCommand } from "@/features/memory-engine/domain/commands";
 import type { MemorySnapshot } from "@/features/memory-engine/domain/snapshots";
 import type { MemorySceneSelectable } from "@/features/memory-engine/rendering/canvasTypes";
+
+export type LearningTab = "code" | "explanation";
 
 type ExplanationPanelProps = {
   snapshot: MemorySnapshot;
@@ -13,17 +13,16 @@ type ExplanationPanelProps = {
   selected: MemorySceneSelectable | null;
   codeLines?: string[];
   highlightedLine?: number;
+  activeTab: LearningTab;
+  onTabChange: (tab: LearningTab) => void;
 };
-
-type LearningTab = "code" | "explanation";
 
 const tabs: { id: LearningTab; label: string; shortcut: string }[] = [
   { id: "code", label: "Code", shortcut: "C" },
   { id: "explanation", label: "Explanation", shortcut: "E" }
 ];
 
-export function ExplanationPanel({ snapshot, explanations, scenarioCommands, selected, codeLines, highlightedLine }: ExplanationPanelProps) {
-  const [activeTab, setActiveTab] = useState<LearningTab>("code");
+export function ExplanationPanel({ snapshot, explanations, scenarioCommands, selected, codeLines, highlightedLine, activeTab, onTabChange }: ExplanationPanelProps) {
   const activeCommandIndex = snapshot.stepIndex - 1;
 
   const hasVariables = snapshot.stackFrames.length > 0 || snapshot.heapBlocks.length > 0;
@@ -37,7 +36,7 @@ export function ExplanationPanel({ snapshot, explanations, scenarioCommands, sel
             className={activeTab === tab.id ? "is-active" : undefined}
             data-shortcut={tab.shortcut}
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => onTabChange(tab.id)}
             role="tab"
             type="button"
           >

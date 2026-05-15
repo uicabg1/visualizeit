@@ -184,6 +184,7 @@ const applyCommand = (state: MutableState, command: MemoryCommand, stepIndex: nu
         id,
         address,
         size: command.size,
+        capacity: command.fields?.length ?? 0,
         label: command.label,
         allocated: true,
         fields: command.fields?.map((field) => ({ ...field, value: cloneValue(field.value) })) ?? [],
@@ -248,6 +249,21 @@ const applyCommand = (state: MutableState, command: MemoryCommand, stepIndex: nu
       if (field) {
         field.value = cloneValue(command.value);
       } else {
+        if (block.capacity > 0) {
+          const indexMatch = command.fieldName.match(/^\[(\d+)\]$/);
+          if (indexMatch) {
+            const index = parseInt(indexMatch[1], 10);
+            if (index >= block.capacity) {
+              addEventDiagnostic(
+                state,
+                createDiagnostic("BUFFER_OVERFLOW", "error",
+                  `Buffer overflow — write to ${command.fieldName} exceeds declared capacity of ${block.capacity}.`,
+                  { id: block.id, label: block.label }
+                )
+              );
+            }
+          }
+        }
         block.fields.push({
           name: command.fieldName,
           dataType: "unknown",

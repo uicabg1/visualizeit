@@ -87,6 +87,10 @@ export const explainEvent = (snapshot: MemorySnapshot): string[] => {
     if (diagnostic.type === "HEAP_FRAGMENTATION") {
       explanations.push("Freed and allocated heap blocks coexist, which can fragment the heap.");
     }
+
+    if (diagnostic.type === "BUFFER_OVERFLOW") {
+      explanations.push("Buffer overflow — write past the end of a fixed-size buffer corrupts adjacent memory and is undefined behavior.");
+    }
   }
 
   return [...new Set(explanations)];

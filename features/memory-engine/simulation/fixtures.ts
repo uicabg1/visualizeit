@@ -338,6 +338,75 @@ export const memoryEngineScenarios: MemoryScenario[] = [
     stepToLine: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
   },
   {
+    id: "buffer-overflow",
+    title: "Buffer Overflow",
+    category: "Bugs & Pitfalls",
+    description: "strcpy writes past a fixed-size stack buffer, corrupting adjacent memory.",
+    regions: { stack: true, heap: true },
+    commands: [
+      { type: "ENTER_FUNCTION", functionName: "main", label: "Enter main" },
+      { type: "ENTER_FUNCTION", functionName: "vulnerable", label: "Call vulnerable()" },
+      { type: "DECLARE_VARIABLE", name: "buf", dataType: "char *", label: "Declare buf — fixed 8-byte buffer" },
+      {
+        type: "MALLOC",
+        target: { kind: "variable", name: "buf" },
+        size: 8,
+        label: "char[8]",
+        fields: [
+          { name: "[0]", dataType: "char", value: { kind: "number", value: 0 } },
+          { name: "[1]", dataType: "char", value: { kind: "number", value: 0 } },
+          { name: "[2]", dataType: "char", value: { kind: "number", value: 0 } },
+          { name: "[3]", dataType: "char", value: { kind: "number", value: 0 } },
+          { name: "[4]", dataType: "char", value: { kind: "number", value: 0 } },
+          { name: "[5]", dataType: "char", value: { kind: "number", value: 0 } },
+          { name: "[6]", dataType: "char", value: { kind: "number", value: 0 } },
+          { name: "[7]", dataType: "char", value: { kind: "number", value: 0 } },
+        ]
+      },
+      {
+        type: "WRITE_FIELD",
+        blockId: "heap-1",
+        fieldName: "[0]",
+        value: { kind: "number", value: 108 },
+        label: "strcpy writes 'l' → buf[0]"
+      },
+      {
+        type: "WRITE_FIELD",
+        blockId: "heap-1",
+        fieldName: "[1]",
+        value: { kind: "number", value: 111 },
+        label: "strcpy writes 'o' → buf[1]"
+      },
+      {
+        type: "WRITE_FIELD",
+        blockId: "heap-1",
+        fieldName: "[7]",
+        value: { kind: "number", value: 33 },
+        label: "strcpy writes '!' → buf[7] — last valid byte"
+      },
+      {
+        type: "WRITE_FIELD",
+        blockId: "heap-1",
+        fieldName: "[8]",
+        value: { kind: "number", value: 0 },
+        label: "strcpy writes '\\0' → buf[8] — BUFFER OVERFLOW past end of buf[8]"
+      },
+      { type: "EXIT_FUNCTION", label: "Exit vulnerable — stack corruption occurred" },
+      { type: "EXIT_FUNCTION", label: "Exit main" }
+    ],
+    codeLines: [
+      "void vulnerable() {",
+      "    char buf[8];",
+      "    strcpy(buf, \"longer!!\");",
+      "}",
+      "",
+      "int main() {",
+      "    vulnerable();",
+      "}",
+    ],
+    stepToLine: [5, 0, 1, 1, 2, 2, 2, 2, 3, 7]
+  },
+  {
     id: "leak-and-dangling-pointer",
     title: "Leak And Dangling Pointer",
     category: "Bugs & Pitfalls",

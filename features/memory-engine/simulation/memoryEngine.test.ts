@@ -138,8 +138,8 @@ describe("memory engine simulation", () => {
     });
   });
 
-  it("ships seven deterministic MVP scenarios with readable labels", () => {
-    expect(memoryEngineScenarios).toHaveLength(7);
+  it("ships eight deterministic MVP scenarios with readable labels", () => {
+    expect(memoryEngineScenarios).toHaveLength(8);
 
     for (const scenario of memoryEngineScenarios) {
       const firstRun = runMemoryProgram(scenario.commands);
@@ -212,6 +212,24 @@ describe("memory engine simulation", () => {
     const final = getFinalSnapshot(snapshots);
     expect(final.stackFrames).toHaveLength(0);
     expect(final.diagnostics).toHaveLength(0);
+  });
+
+  it("buffer-overflow: BUFFER_OVERFLOW diagnostic fires on write to [8] of an 8-capacity block", () => {
+    const scenario = memoryEngineScenarios.find((s) => s.id === "buffer-overflow");
+    if (!scenario) throw new Error("buffer-overflow scenario not found");
+
+    const snapshots = runMemoryProgram(scenario.commands);
+
+    // snapshot index 8 = after WRITE_FIELD [8] (overflow step)
+    const overflowSnapshot = snapshots[8];
+    expect(overflowSnapshot?.diagnostics.map((d) => d.type)).toContain("BUFFER_OVERFLOW");
+
+    // heap-1 has 9 fields after the overflow write (8 declared + 1 past end)
+    expect(overflowSnapshot?.heapBlocks[0]?.fields).toHaveLength(9);
+
+    // no overflow on valid writes — snapshot after [0] write should not have BUFFER_OVERFLOW
+    const validSnapshot = snapshots[5];
+    expect(validSnapshot?.diagnostics.map((d) => d.type)).not.toContain("BUFFER_OVERFLOW");
   });
 });
 

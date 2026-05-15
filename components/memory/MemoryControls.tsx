@@ -1,6 +1,12 @@
 "use client";
 
-import { playbackSpeedOptions, type PlaybackSpeed } from "@/features/memory-engine/rendering/playbackSpeed";
+import { useState } from "react";
+import {
+  getPlaybackIntervalMs,
+  getTransitionMs,
+  playbackSpeedOptions,
+  type PlaybackSpeed
+} from "@/features/memory-engine/rendering/playbackSpeed";
 
 type MemoryControlsProps = {
   stepIndex: number;
@@ -75,6 +81,10 @@ export function MemoryControls({
   const maxStep = Math.max(stepCount - 1, 0);
   const isAtStart = stepIndex === 0;
   const isAtEnd = stepIndex >= maxStep;
+  const [isDragging, setIsDragging] = useState(false);
+  const intervalMs = getPlaybackIntervalMs(playbackSpeed);
+  const fillTransitionMs = Math.min(getTransitionMs(playbackSpeed, intervalMs), 320);
+  const fillTransitionEasing = "cubic-bezier(0.22, 1, 0.36, 1)";
 
   return (
     <div className="memory-controls" role="group" aria-label="Memory controls">
@@ -120,20 +130,35 @@ export function MemoryControls({
         </button>
       </div>
 
-      <input
-        type="range"
-        className="memory-controls__progress"
-        min={0}
-        max={maxStep}
-        step={1}
-        value={stepIndex}
-        onChange={(event) => onStepChange(Number(event.target.value))}
-        aria-label="Playback progress"
-        aria-valuemin={1}
-        aria-valuemax={totalSteps}
-        aria-valuenow={stepIndex + 1}
-        style={{ "--fill-pct": `${maxStep > 0 ? (stepIndex / maxStep) * 100 : 0}%` } as React.CSSProperties}
-      />
+      <div
+        className={`memory-controls__progress-wrap${isDragging ? " is-dragging" : ""}`}
+        style={
+          {
+            "--fill-pct": `${maxStep > 0 ? (stepIndex / maxStep) * 100 : 0}%`,
+            "--fill-transition-ms": `${fillTransitionMs}ms`,
+            "--fill-transition-easing": fillTransitionEasing
+          } as React.CSSProperties
+        }
+      >
+        <input
+          type="range"
+          className="memory-controls__progress"
+          min={0}
+          max={maxStep}
+          step={1}
+          value={stepIndex}
+          onChange={(event) => onStepChange(Number(event.target.value))}
+          onPointerDown={() => setIsDragging(true)}
+          onPointerUp={() => setIsDragging(false)}
+          onPointerCancel={() => setIsDragging(false)}
+          onBlur={() => setIsDragging(false)}
+          aria-label="Playback progress"
+          aria-valuemin={1}
+          aria-valuemax={totalSteps}
+          aria-valuenow={stepIndex + 1}
+        />
+        <span className="memory-controls__progress-dot" aria-hidden="true" />
+      </div>
 
       <p className="memory-controls__step" aria-label={`Step ${stepIndex + 1} of ${totalSteps}`}>
         {stepIndex + 1} / {totalSteps}

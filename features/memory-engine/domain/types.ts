@@ -71,6 +71,7 @@ export type HeapBlock = {
   id: string;
   address: MemoryAddress;
   size: number;
+  capacity: number; // initial declared field count; 0 = no overflow detection
   label: string;
   allocated: boolean;
   fields: StructField[];

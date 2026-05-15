@@ -1,7 +1,9 @@
 # Handoff — Recursive Stack: Tasks 1 & 2 Done / Task 3
 
 **Date:** 2026-05-13
-**Status:** Task 1 complete. Task 2 complete. Task 3 pending.
+**Status:** Tasks 1–16 complete. Task 17 (mobile responsive) pending.
+
+> **Backlog & future tasks:** See [docs/roadmap/backlog.md](../roadmap/backlog.md). All upcoming work (UX, content, educational, technical) is enumerated there with priorities and acceptance criteria. Read both this handoff (last session outcome) and the backlog (forward queue) before starting a session.
 
 ---
 
@@ -534,32 +536,137 @@ Added shareable URL state — `?scenario=<id>&step=<n>` encodes active scenario 
 
 ---
 
-## Task 15 — Next Session
+## What Was Done (Task 15)
 
-> **Context:** This is VisualizeIT, a Next.js app that visualizes C memory concepts interactively. The memory engine lives in `features/memory-engine/`. The UI renders 7 scenarios from a sidebar; the canvas draws stack frames and heap blocks step-by-step with per-step line highlighting in a Code tab and pedagogical text in an Explanation tab.
->
-> Tasks 1–14 are complete: 7 scenarios, canvas ResizeObserver fix, recursive-aware + diagnostic-aware explanations (48 tests), real C source code for all scenarios, production deployment, a static `/about` page, a welcome empty-state overlay, keyboard shortcuts (Space play/pause, ArrowRight/Left step), and shareable URL state (`?scenario=<id>&step=<n>`).
->
-> **Current state:** The app is live at https://visualizeit-two.vercel.app. 48 tests green. URL state syncs on every step/scenario change; loading a shared URL restores exact state.
->
-> **Task 15:** Add a "Copy link" share button to the navbar. When clicked, it copies the current URL (which already encodes scenario + step) to the clipboard and shows a brief "Copied!" confirmation that reverts to the icon after 1.5s.
->
-> **Implementation steps:**
-> 1. In `components/memory/MemoryWorkspace.tsx`, add a "Copy link" button to the navbar's right slot (next to the existing "About" link). The button should use `navigator.clipboard.writeText(window.location.href)`.
-> 2. Track a `copied` boolean state in `MemoryWorkspace`. On click: set `copied = true`, copy URL, then `setTimeout(() => setCopied(false), 1500)`.
-> 3. Button label: show a link/chain SVG icon + "Share" text. While `copied === true`, show a checkmark icon + "Copied!" text instead. Animate the transition with a short opacity/transform fade using the existing CSS token system.
-> 4. Style the button to match the existing "About" link: `font-size: 12px`, `font-weight: 500`, `color: var(--text-secondary)`, `border: 1px solid var(--border-default)`, `border-radius: var(--radius-md)`, `padding: 4px 10px`. On `copied` state: border and text color shift to `var(--color-pointer)` (the blue accent already used elsewhere).
-> 5. Place the button to the left of the "About" link in the same right-slot `div`, with an 8px gap between them.
-> 6. Run `pnpm build` → confirm clean. Run `pnpm test` → confirm 48 tests still green.
-> 7. Deploy to Vercel: `vercel deploy --prod -y --scope uicabgadiel67-1227s-projects`.
-> 8. Verify with Puppeteer: click Share, wait 200ms, screenshot to confirm "Copied!" state; wait 1.6s, screenshot to confirm reverted to "Share".
->
-> **Verification criteria:**
-> - `pnpm build` clean.
-> - `pnpm test` → 48 tests green.
-> - Share button visible in navbar, left of About link.
-> - Click → label changes to "Copied!" with blue accent styling.
-> - After 1.5s → reverts to "Share".
-> - URL copied to clipboard is the current full URL (including `?scenario=&step=`).
-> - No console errors.
-> - Upgrade this handoff for the next task (one task per session).
+Added "Share" button to navbar — copies current URL to clipboard and shows "Copied!" confirmation.
+
+**Files changed:**
+- `components/memory/MemoryWorkspace.tsx` — added `copied` boolean state; added `<button>` in the right-slot `div` (flex row, 8px gap, left of "About" link); on click: `navigator.clipboard.writeText(window.location.href)`, `setCopied(true)`, `setTimeout(() => setCopied(false), 1500)`; button renders chain-link SVG + "Share" normally; checkmark SVG + "Copied!" when `copied === true`; color and border shift to `var(--color-pointer)` on copied state.
+
+**Verification passed:**
+- `pnpm build` → clean, route `/` at 13.7 kB ✅
+- `pnpm test` → 48 tests green (no engine changes) ✅
+- Share button visible in navbar, left of About link ✅
+- Click → "Copied!" with blue accent border and text ✅
+- After 1.5s → reverts to "Share" ✅
+- No console errors ✅
+- Deployed to Vercel production ✅
+
+**Screenshots saved to `tmp-screenshots/`:**
+- `task15-share-before.png`
+- `task15-share-copied.png`
+- `task15-share-reverted.png`
+
+---
+
+## What Was Done (Task 16)
+
+Added step-progress dot row between canvas and step banner — one dot per step, clickable, state-aware.
+
+**Files changed:**
+- `components/memory/MemoryWorkspace.tsx` — added `<div className="step-dots">` between `<MemoryCanvas>` and `<StepBanner>`; maps over `snapshots` (indices 0..maxStep); each dot is a `<button>` with `aria-label`, `aria-current`, `onClick={() => handleStepChange(i)}`; className: `step-dots__dot` + `is-active` (current) | `is-past` (index < activeStepIndex) | default (future).
+- `app/globals.css` — added `.step-dots` (flex, centered, gap 5px), `.step-dots__dot` (6×6px circle, faint default), `.step-dots__dot.is-past` (`--border-default`), `.step-dots__dot.is-active` (amber, scale 1.5, amber glow shadow), hover scale 1.3.
+
+**Verification passed:**
+- `pnpm build` → clean, route `/` at 13.8 kB ✅
+- `pnpm test` → 48 tests green ✅
+- `recursive-stack` step 7/12: 12 dots, 6 past, 1 amber active (enlarged), 5 faint ✅
+- Click dot 3 → jumps to step 3, active dot updates ✅
+- No console errors ✅
+- Deployed to Vercel production ✅
+
+**Screenshots saved to `tmp-screenshots/`:**
+- `task16-dots-step6.png`
+- `task16-dots-after-click-dot3.png`
+
+---
+
+## Strategy Decision — Multi-viewport (2026-05-14)
+
+Single-task "mobile responsive" was reframed after design discussion. Full responsive to 375px compromises pedagogy (canvas + explanation can't both be visible at 375px). Decision: **hybrid** — tablet responsive (≥768px) + intentional phone gate (<768px) with `/about` polish.
+
+This splits into **two sessions**:
+- **T17a (next session)** — Tablet responsive collapse (768–1023px → single-column).
+- **T17b (session after)** — Phone gate (<768px) + `/about` mobile polish.
+
+Full task details, file lists, acceptance criteria for both in [`docs/roadmap/backlog.md`](../roadmap/backlog.md) under T17.
+
+---
+
+## What Was Done (Task 17a)
+
+Tablet responsive collapse (768–1023px) — single-column layout + slide-in drawer for scenarios.
+
+**Decision (confirmed with user at session start):** drawer + hamburger over chip strip. Drawer preserves category groups (Fundamentals / Data Structures / Bugs & Pitfalls) cleanly; chip strip would have flattened them.
+
+**Files changed:**
+- `components/memory/MemoryWorkspace.tsx` — added `isSidebarOpen` state (default `false`); hamburger button in brand block (left navbar slot) with `aria-expanded` + `aria-controls`; wrapped `<ScenarioSidebar>` in `.memory-workspace__sidebar-slot` container w/ `role="dialog"` when open; added `<button class="memory-workspace__backdrop">` for tap-to-close; close-on-scenario-select (extended existing `scenarioId` effect with `setIsSidebarOpen(false)`); Escape closes drawer (new `useEffect`).
+- `app/globals.css` —
+  - **New base styles:** `.memory-workspace__hamburger` (icon button, `display: none` by default), `.memory-workspace__sidebar-slot` (`display: contents` at desktop so sidebar stays in grid), `.memory-workspace__backdrop` (fixed inset, dim, blur, `display: none` by default), `backdrop-fade-in` keyframe.
+  - **Replaced** old `@media (max-width: 980px)` block (which hid sidebar entirely) with `@media (max-width: 1023px)`: hamburger visible; main grid collapses to single column with rows `(canvas, panel)`; sidebar-slot becomes `position: fixed` left-anchored drawer (`width: min(280px, 80vw)`, `z-index: 40`, `translateX(-100%)`); `.is-drawer-open` slides drawer in via `translateX(0)` w/ `cubic-bezier(0.32, 0.72, 0, 1)` 280ms; backdrop becomes `display: block` when open; canvas-area moves to row 1, explanation panel to row 2 (`max-height: 50vh`); brand-chip hidden; progress wrap shrunk to 180px.
+  - **Replaced** old `@media (max-width: 720px)` / `(max-width: 560px)` blocks with `@media (max-width: 767px)`: brand-name hidden; controls wrap; progress flexes; navbar-meta condensed. (T17b will replace this with phone gate.)
+
+**Architecture decisions:**
+- `display: contents` on `.memory-workspace__sidebar-slot` at desktop keeps the existing 3-column grid `220px / 1fr / 340px` intact — the wrapper is invisible to layout, and `.scenario-sidebar` itself sits in column 1 as before. At tablet the wrapper switches to `display: block` + `position: fixed`, removing itself from grid flow and floating as a drawer.
+- Drawer slide uses `transform` only (no width/layout changes) so animation stays on the compositor.
+- Backdrop is a `<button>` (not a `div`) so keyboard users get free focus + Enter/Space activation.
+- Escape closes drawer via a scoped listener (active only while open) — avoids leaking handler when desktop.
+
+**Verification passed:**
+- `pnpm test` → 48 tests green ✅
+- `pnpm build` → clean; route `/` at 14.2 kB (was 13.8 kB) ✅
+- Smoke (`smoke-task17a-tablet.mjs` w/ Playwright) at 768 / 1024 / 1280:
+  - 768×1024: no horizontal scroll (`scrollWidth - clientWidth = 0`); drawer opens on hamburger tap; selecting "Heap Blocks" auto-closes drawer + switches scenario; explanation panel docked below canvas ✅
+  - 1024×768: hamburger hidden (computed style `display: none`); 3-column layout preserved ✅
+  - 1280×800: same as 1024 — desktop intact ✅
+  - Zero console errors at all widths ✅
+- Deploy: https://visualizeit-fht901xyb-uicabgadiel67-1227s-projects.vercel.app — status `● Ready` ✅
+
+**Screenshots saved to `tmp-screenshots/`:**
+- `task17a-load-768.png` / `task17a-load-1024.png` / `task17a-load-1280.png` (initial recursive-stack step 7)
+- `task17a-drawer-open-768.png` (drawer slid in over dimmed canvas)
+- `task17a-after-select-768.png` (drawer closed, Heap Blocks active)
+
+**Phone (<768px) status:** Still inherits the tablet drawer rules — hamburger works, canvas + panel stack — but navbar controls + canvas region overflow are not gated. T17b will introduce the phone gate (per backlog) that fixes this intentionally rather than mechanically.
+
+**Known minor visual at 768px:** step counter "8 / 12" sits very close to the speed selector in the navbar (no overlap, but tight). Acceptable for this session — if T17b user-tests catches it, fix at that point by giving controls `flex-wrap: wrap` at the 768 edge or trimming step text to bare number.
+
+---
+
+## What Was Done (Task 17b)
+
+Added phone gate (<768px) + `/about` mobile audit. All T17 items now complete.
+
+**Files changed:**
+- `components/memory/PhoneGate.tsx` — **new**. Fullscreen gate component: VisualizeIT logo SVG (amber glow), display-font headline "Stack frames + pointers / need room", sub-label with amber-accented "≥768px", uppercase label, Copy Link button (amber, reuses `navigator.clipboard.writeText(window.location.href)` + 1500ms "Copied!" state), "Read the overview" link → `/about`, footer note "This link keeps your scenario + step". Self-contained, no props.
+- `components/memory/MemoryWorkspace.tsx` — added `isPhone` state (default `false` for SSR safety); `useEffect` with `matchMedia("(max-width: 767px)")` listener (sets state on mount + on resize); after the "no scenario" early return, added `if (isPhone) return <PhoneGate />`; imported `PhoneGate`.
+- `app/globals.css` — removed T17a `@media (max-width: 767px)` placeholder block (dead code, superseded by gate); added `.phone-gate` / `.phone-gate__bg` / `.phone-gate__logo` / `.phone-gate__headline` / `.phone-gate__line1/.line2` / `.phone-gate__sub` / `.phone-gate__accent` / `.phone-gate__label` / `.phone-gate__actions` / `.phone-gate__copy-btn` / `.phone-gate__about-link` / `.phone-gate__footer-note` — matches welcome-overlay aesthetic (dot grid bg, amber radial glow, violet depth, staggered `overlay-item-in` animations; reuses `overlay-item-in` keyframe already defined).
+- `app/about/page.tsx` — added `@media (max-width: 480px)` block in inline `<style>`: reduces hero title from min 40px to `clamp(28px, 9vw, 40px)`, reduces hero margin-bottom 64→48px, reduces description font-size 16→15px, reduces card gap 20→12px and padding 16/20→14/16px, reduces footer margin-top 64→48px.
+
+**Architecture decisions:**
+- `isPhone` initialized to `false` — avoids SSR/hydration mismatch (server always renders workspace, client corrects after mount if phone).
+- Gate is placed after the "no scenario" guard so it always renders when `isPhone`, regardless of scenario state.
+- `PhoneGate` uses `window.location.href` directly in the click handler — safe because component only renders client-side after matchMedia fires.
+- `overlay-item-in` keyframe reused from existing CSS — no duplication.
+- Old `@media (max-width: 767px)` placeholder removed cleanly — gate fully replaces that concern.
+
+**Verification passed:**
+- `pnpm test` → 48 tests green ✅
+- `pnpm build` → clean; route `/` at 14.6 kB (was 13.8 kB) ✅
+- Playwright at 375×667: `.phone-gate` visible, no horizontal scroll (0px), no workspace bleed-through ✅
+- Playwright at 414×896: gate visible ✅
+- Playwright at 767×1024: gate visible (edge case, <768px) ✅
+- Playwright at 768×1024: `.phone-gate` count 0, `.memory-workspace` visible, hamburger visible (T17a tablet drawer intact) ✅
+- `/about` at 375×667: no horizontal scroll (0px), hero + cards + nav legible ✅
+- No console errors at any width ✅
+- SSR hydration: no mismatches (matchMedia starts at `false`) ✅
+
+**Screenshots saved to `tmp-screenshots/`:**
+- `task17b-gate-375.png` — gate fullscreen on 375×667
+- `task17b-gate-414.png` — gate on 414×896
+- `task17b-gate-767.png` — gate on 767×1024
+- `task17b-workspace-768.png` — T17a tablet layout at 768×1024 (gate absent)
+- `task17b-about-375.png` — `/about` at 375×667
+
+**Production URL:** https://visualizeit-7r0e4jlia-uicabgadiel67-1227s-projects.vercel.app
+

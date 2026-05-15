@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "About — VisualizeIT",
-  description: "What VisualizeIT is and the 7 memory scenarios it covers."
+  description: "What VisualizeIT is and the 8 memory scenarios it covers."
 };
 
 const scenarios = [
@@ -55,6 +55,13 @@ const scenarios = [
     category: "Bugs & Pitfalls",
     description: "Lost heap reference and pointer to released memory — two of the most common C bugs.",
     color: "error"
+  },
+  {
+    id: "buffer-overflow",
+    title: "Buffer Overflow",
+    category: "Bugs & Pitfalls",
+    description: "strcpy writes past a fixed-size stack buffer, corrupting adjacent memory — a classic security vulnerability.",
+    color: "error"
   }
 ] as const;
 
@@ -100,7 +107,7 @@ export default function AboutPage() {
             chase addresses — all synchronized to the source code line that caused it.
           </p>
           <p className="about-hero__description">
-            Seven interactive scenarios cover the fundamentals every systems programmer
+            Eight interactive scenarios cover the fundamentals every systems programmer
             needs to internalize: from basic stack layout to memory leaks and dangling
             pointers. Each step shows both the visual state and a plain-English explanation.
           </p>
@@ -109,7 +116,7 @@ export default function AboutPage() {
         <section className="about-scenarios" aria-label="Available scenarios">
           <h2 className="about-scenarios__heading">
             <span className="about-scenarios__heading-label">Scenarios</span>
-            <span className="about-scenarios__count">7</span>
+            <span className="about-scenarios__count">8</span>
           </h2>
 
           <ol className="about-scenario-list">
@@ -468,6 +475,30 @@ export default function AboutPage() {
           .about-nav__cta {
             font-size: 12px;
             padding: 5px 10px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .about-hero {
+            margin-bottom: 48px;
+          }
+
+          .about-hero__title {
+            font-size: clamp(28px, 9vw, 40px);
+            margin-bottom: 20px;
+          }
+
+          .about-hero__description {
+            font-size: 15px;
+          }
+
+          .about-scenario-card {
+            gap: 12px;
+            padding: 14px 16px;
+          }
+
+          .about-footer {
+            margin-top: 48px;
           }
         }
       `}</style>

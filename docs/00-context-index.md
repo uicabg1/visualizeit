@@ -8,7 +8,7 @@ VisualizeIT will be built as a modular technical visualization platform, but the
 
 > Build one excellent interactive experience first: the Low-Level Memory Engine for C memory visualization.
 
-IPv6/SLAAC, discrete mathematics, and XAI remain future modules.
+IPv6/SLAAC, discrete mathematics, and Explainable AI remain future modules.
 
 ## Phase Status
 
@@ -17,64 +17,45 @@ IPv6/SLAAC, discrete mathematics, and XAI remain future modules.
 | Phase 1 — Deterministic Simulation Foundation | ✅ DONE | 2026-05-03 |
 | Phase 2 — Interactive Canvas Visualizer | ✅ DONE | 2026-05-04 |
 | Phase 2.1 — alg0.dev Visual Alignment | ✅ DONE | 2026-05-10 |
-| Phase 2.2 — Brand Identity & Visual Refinement | 🔵 ACTIVE | 2026-05-11 |
+| Phase 2.2 — Brand Identity & Visual Refinement | ✅ DONE | 2026-05-11 |
+| Phase 2.5 — Content Expansion + Production Launch | 🔵 ACTIVE | T1–T16 done 2026-05-12; T17 in flight |
 | Phase 3 — WASM Acceleration | ⏳ NOT STARTED | — |
 
-## Token-Saving Method
+**Phase 2.5 scope:** 8 scenarios with real C code + per-step line highlighting, recursive- and diagnostic-aware pedagogy (49 tests), ResizeObserver canvas, `/about` page, welcome overlay, keyboard shortcuts, shareable URL state, Share button, step dots, fullscreen canvas mode. Deployed to https://visualizeit-two.vercel.app. Forward queue in [`docs/roadmap/backlog.md`](roadmap/backlog.md).
 
-Use small context packs to keep sessions focused.
+## Documentation Index
 
-### Context Pack A: Architecture
+### Architecture
 
-Use when asking for system design, project scaffolding, or technical structure.
+System design, project scaffolding, technical structure:
 
-Include:
-
-- `README.md`
 - `docs/architecture/01-system-architecture.md`
 - `docs/architecture/02-directory-structure.md`
 - `docs/architecture/03-performance-and-simulation-strategy.md`
 
-### Context Pack B: MVP Product Scope
+### MVP Product Scope
 
-Use when asking for UI flows, component planning, or feature breakdown.
+UI flows, component planning, feature breakdown:
 
-Include:
-
-- `README.md`
 - `docs/mvp/01-memory-engine-functional-spec.md`
 - `docs/mvp/02-memory-engine-roadmap.md`
 
-### Context Pack C: Implementation Planning
+### Phase 2.5 Active Work
 
-Use when creating a coding plan.
+Task backlog, session handoffs, current state:
 
-Include:
-
-- `docs/architecture/02-directory-structure.md`
-- `docs/architecture/03-performance-and-simulation-strategy.md`
-- `docs/mvp/01-memory-engine-functional-spec.md`
-- `docs/mvp/02-memory-engine-roadmap.md`
-
-### Context Pack D: Future Expansion
-
-Use only after the memory MVP is working.
-
-Include:
-
-- `README.md`
-- `docs/future-modules/01-expansion-backlog.md`
-
-### Context Pack F: Phase 2.2 Brand Identity & Visual Refinement
-
-Use when executing or planning Phase 2.2 tasks (brand tokens, canvas transitions, scenario stack focus).
-
-Include:
-
+- `docs/roadmap/backlog.md`
+- `docs/handoffs/2026-05-12-phase-2-recursive-stack-context.md`
 - `docs/checkpoints/current-state.md`
-- `docs/handoffs/2026-05-11-phase-2-2-brand-identity.md`
-- `docs/handoffs/2026-05-11-phase-2-2-canvas-transitions.md`
-- `docs/handoffs/2026-05-11-phase-2-2-scenario-stack-focus.md`
+
+Key source files:
+
+- `features/memory-engine/simulation/fixtures.ts` — scenario definitions
+- `components/memory/MemoryWorkspace.tsx` — main orchestrator
+
+### Future Expansion
+
+- `docs/future-modules/01-expansion-backlog.md`
 
 ## Guardrails
 

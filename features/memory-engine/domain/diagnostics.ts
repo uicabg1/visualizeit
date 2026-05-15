@@ -4,7 +4,8 @@ export type DiagnosticType =
   | "DOUBLE_FREE"
   | "NULL_POINTER_DEREFERENCE"
   | "USE_AFTER_FREE"
-  | "HEAP_FRAGMENTATION";
+  | "HEAP_FRAGMENTATION"
+  | "BUFFER_OVERFLOW";
 
 export type DiagnosticSeverity = "info" | "warning" | "error";
 

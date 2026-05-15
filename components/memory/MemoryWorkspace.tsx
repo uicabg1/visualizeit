@@ -10,9 +10,10 @@ import { layoutMemoryScene } from "@/features/memory-engine/rendering/layoutMemo
 import { getPlaybackIntervalMs, type PlaybackSpeed } from "@/features/memory-engine/rendering/playbackSpeed";
 import { memoryEngineScenarios } from "@/features/memory-engine/simulation/fixtures";
 import { runMemoryProgram } from "@/features/memory-engine/simulation/memoryEngine";
-import { ExplanationPanel } from "./ExplanationPanel";
+import { ExplanationPanel, type LearningTab } from "./ExplanationPanel";
 import { MemoryCanvas } from "./MemoryCanvas";
 import { MemoryControls } from "./MemoryControls";
+import { PhoneGate } from "./PhoneGate";
 import { ScenarioSidebar } from "./ScenarioSidebar";
 import { StepBanner } from "./StepBanner";
 
@@ -39,6 +40,10 @@ export function MemoryWorkspace() {
   const [playbackSpeed, setPlaybackSpeed] = useState<PlaybackSpeed>(0.5);
   const [containerWidth, setContainerWidth] = useState(960);
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<LearningTab>("code");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isPhone, setIsPhone] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const canvasAreaRef = useRef<HTMLDivElement | null>(null);
   const isInitialMountRef = useRef(true);
   const overlayDismissRef = useRef(false);
@@ -88,7 +93,26 @@ export function MemoryWorkspace() {
     setStepIndex(0);
     setIsPlaying(false);
     setSelectedId(null);
+    setActiveTab("code");
+    setIsSidebarOpen(false);
   }, [scenarioId]);
+
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsSidebarOpen(false);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [isSidebarOpen]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    setIsPhone(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsPhone(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -124,11 +148,17 @@ export function MemoryWorkspace() {
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
         setStepIndex((c) => clampStep(c - 1, maxStep));
+      } else if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        setIsFullscreen((c) => !c);
+      } else if (e.key === "Escape" && isFullscreen) {
+        e.preventDefault();
+        setIsFullscreen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [maxStep]);
+  }, [maxStep, isFullscreen]);
 
   useEffect(() => {
     if (!isPlaying) {
@@ -153,6 +183,9 @@ export function MemoryWorkspace() {
 
   const handleSelect = (nextSelected: MemorySceneSelectable | null) => {
     setSelectedId(nextSelected?.id ?? null);
+    if (nextSelected) {
+      setActiveTab("explanation");
+    }
   };
 
   if (!scenario || !activeSnapshot || !activeScene) {
@@ -163,11 +196,29 @@ export function MemoryWorkspace() {
     );
   }
 
+  if (isPhone) {
+    return <PhoneGate />;
+  }
+
   return (
     <main className="memory-workspace">
       <nav className="memory-workspace__navbar" aria-label="VisualizeIT navigation">
         <div className="memory-workspace__navbar-row">
           <div className="memory-workspace__brand">
+            <button
+              type="button"
+              className="memory-workspace__hamburger"
+              onClick={() => setIsSidebarOpen((c) => !c)}
+              aria-label={isSidebarOpen ? "Close scenario drawer" : "Open scenario drawer"}
+              aria-expanded={isSidebarOpen}
+              aria-controls="scenario-drawer"
+            >
+              <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <line x1="3" y1="6" x2="17" y2="6"/>
+                <line x1="3" y1="10" x2="17" y2="10"/>
+                <line x1="3" y1="14" x2="17" y2="14"/>
+              </svg>
+            </button>
             <span className="memory-workspace__logo" aria-hidden="true">
               <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
                 <rect x="2" y="2" width="28" height="28" rx="6" fill="#F5B82E"/>
@@ -198,6 +249,36 @@ export function MemoryWorkspace() {
           </div>
 
           <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: "8px" }}>
+            <button
+              onClick={() => setIsFullscreen((c) => !c)}
+              title={isFullscreen ? "Exit fullscreen (Esc or f)" : "Fullscreen (f)"}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                fontSize: "12px",
+                fontWeight: 500,
+                color: isFullscreen ? "var(--accent-amber)" : "var(--text-secondary)",
+                background: isFullscreen ? "var(--accent-amber-dim)" : "none",
+                border: `1px solid ${isFullscreen ? "var(--accent-amber-border)" : "var(--border-default)"}`,
+                borderRadius: "var(--radius-md)",
+                padding: "4px 10px",
+                cursor: "pointer",
+                transition: "color 150ms ease, border-color 150ms ease, background 150ms ease",
+              }}
+              aria-pressed={isFullscreen}
+            >
+              {isFullscreen ? (
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+                  <path d="M5 1H1v4M11 1h4v4M5 15H1v-4M11 15h4v-4"/>
+                </svg>
+              ) : (
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+                  <path d="M1 5V1h4M15 5V1h-4M1 11v4h4M15 11v4h-4"/>
+                </svg>
+              )}
+              {isFullscreen ? "Exit" : "Focus"}
+            </button>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(window.location.href);
@@ -264,11 +345,25 @@ export function MemoryWorkspace() {
         </div>
       </nav>
 
-      <div className="memory-workspace__main">
-        <ScenarioSidebar
-          scenarios={memoryEngineScenarios}
-          selectedScenarioId={scenarioId}
-          onScenarioChange={setScenarioId}
+      <div className={`memory-workspace__main${isSidebarOpen ? " is-drawer-open" : ""}${isFullscreen ? " is-fullscreen" : ""}`}>
+        <div
+          className="memory-workspace__sidebar-slot"
+          id="scenario-drawer"
+          role={isSidebarOpen ? "dialog" : undefined}
+          aria-label="Scenarios"
+        >
+          <ScenarioSidebar
+            scenarios={memoryEngineScenarios}
+            selectedScenarioId={scenarioId}
+            onScenarioChange={setScenarioId}
+          />
+        </div>
+        <button
+          type="button"
+          className="memory-workspace__backdrop"
+          aria-label="Close scenario drawer"
+          onClick={() => setIsSidebarOpen(false)}
+          tabIndex={isSidebarOpen ? 0 : -1}
         />
         <div className="memory-workspace__canvas-area" ref={canvasAreaRef}>
           <MemoryCanvas
@@ -286,16 +381,25 @@ export function MemoryWorkspace() {
         </div>
 
         <ExplanationPanel
+          activeTab={activeTab}
           codeLines={codeLines}
           explanations={explanations}
           highlightedLine={highlightedLine}
+          onTabChange={setActiveTab}
           scenarioCommands={scenario.commands}
           selected={selected}
           snapshot={activeSnapshot}
         />
       </div>
 
-      {overlayState !== "hidden" && renderWelcomeOverlay(overlayState === "exiting")}
+      {overlayState !== "hidden" && renderWelcomeOverlay(
+        overlayState === "exiting",
+        () => {
+          if (overlayState === "visible") {
+            setStepIndex((c) => clampStep(c + 1, maxStep));
+          }
+        }
+      )}
     </main>
   );
 }
@@ -312,18 +416,25 @@ function overlayBg() {
         <span className="welcome-overlay__line1">Step through</span>
         <span className="welcome-overlay__line2"><em className="welcome-overlay__accent">C</em> memory, live.</span>
       </h1>
-      <p className="welcome-overlay__sub">7 scenarios · Stack · Heap · Pointers</p>
+      <p className="welcome-overlay__sub">8 scenarios · Stack · Heap · Pointers</p>
       <div className="welcome-overlay__chips">
-        <span className="welcome-overlay__chip"><kbd>Space</kbd> Play</span>
-        <span className="welcome-overlay__chip"><kbd>→</kbd> Next step</span>
+        <span className="welcome-overlay__chip welcome-overlay__chip--kb"><kbd>Space</kbd> Play</span>
+        <span className="welcome-overlay__chip welcome-overlay__chip--kb"><kbd>→</kbd> Next step</span>
+        <span className="welcome-overlay__chip welcome-overlay__chip--touch">Tap anywhere to start</span>
       </div>
     </div>
   );
 }
 
-function renderWelcomeOverlay(isExiting: boolean) {
+function renderWelcomeOverlay(isExiting: boolean, onTap: () => void) {
   return (
-    <div className={`welcome-overlay${isExiting ? " is-exiting" : ""}`} aria-hidden="true">
+    <div
+      className={`welcome-overlay${isExiting ? " is-exiting" : ""}`}
+      onClick={onTap}
+      role="button"
+      aria-label="Tap to start"
+      tabIndex={-1}
+    >
       <div className="welcome-overlay__panel welcome-overlay__panel--top">{overlayBg()}</div>
       <div className="welcome-overlay__panel welcome-overlay__panel--bottom">{overlayBg()}</div>
     </div>
