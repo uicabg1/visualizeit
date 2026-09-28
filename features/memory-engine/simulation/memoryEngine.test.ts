@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 import type { MemoryCommand } from "../domain/commands";
 import type { DiagnosticType } from "../domain/diagnostics";
 import { getFinalSnapshot, runMemoryProgram } from "./memoryEngine";
-import { memoryEngineScenarios } from "./fixtures";
+import { memoryEngineScenarios, type MemoryScenario } from "./fixtures";
+import { validateScenario, validateScenarios } from "./validateScenario";
 
 const diagnosticTypes = (commands: MemoryCommand[]): DiagnosticType[] =>
   getFinalSnapshot(runMemoryProgram(commands)).diagnostics.map((diagnostic) => diagnostic.type);
@@ -291,6 +292,94 @@ describe("memory engine simulation", () => {
         }
       }
     }
+  });
+});
+
+const djb2 = (input: string): number => {
+  let hash = 5381;
+
+  for (let i = 0; i < input.length; i++) {
+    hash = ((hash << 5) + hash + input.charCodeAt(i)) >>> 0;
+  }
+
+  return hash >>> 0;
+};
+
+const GOLDEN_SNAPSHOT_HASHES: Record<string, { all: number; final: number; steps: number }> = {
+  "stack-frame-basics": { all: 132340364, final: 2198786072, steps: 4 },
+  "heap-allocation": { all: 3596178801, final: 702819863, steps: 6 },
+  "struct-with-pointer": { all: 1919866794, final: 2517825567, steps: 7 },
+  "recursive-stack": { all: 604935780, final: 1816939689, steps: 12 },
+  "pointer-arithmetic": { all: 3767436359, final: 3730144005, steps: 12 },
+  "linked-list-traversal": { all: 630883761, final: 2478463454, steps: 14 },
+  "buffer-overflow": { all: 399562130, final: 1055561760, steps: 11 },
+  "leak-and-dangling-pointer": { all: 4004628550, final: 2260974594, steps: 10 }
+};
+
+describe("scenario fixture validation (T-REFACTOR-2)", () => {
+  it("every shipped scenario passes validation with zero issues", () => {
+    expect(validateScenarios(memoryEngineScenarios)).toEqual([]);
+  });
+
+  describe.each(memoryEngineScenarios)("scenario %s", (scenario) => {
+    it("engine stays total: no throw, no INVALID_TARGET diagnostics", () => {
+      const snapshots = runMemoryProgram(scenario.commands);
+
+      expect(snapshots).toHaveLength(scenario.commands.length + 1);
+
+      for (const snapshot of snapshots) {
+        expect(snapshot.diagnostics.filter((diagnostic) => diagnostic.type === "INVALID_TARGET")).toEqual([]);
+      }
+    });
+
+    it("snapshots byte-identical to pre-refactor goldens", () => {
+      const snapshots = runMemoryProgram(scenario.commands);
+
+      expect({
+        all: djb2(JSON.stringify(snapshots)),
+        final: djb2(JSON.stringify(snapshots.at(-1)) ?? ""),
+        steps: snapshots.length
+      }).toEqual(GOLDEN_SNAPSHOT_HASHES[scenario.id]);
+    });
+  });
+
+  it("malformed commands: snapshots returned + INVALID_TARGET emitted, no throw", () => {
+    const badCommands: MemoryCommand[] = [
+      { type: "DECLARE_VARIABLE", name: "orphan", dataType: "int", label: "Declare with no active frame" },
+      { type: "ENTER_FUNCTION", functionName: "main", label: "Enter main" },
+      { type: "WRITE_FIELD", blockId: "heap-99", fieldName: "x", value: { kind: "number", value: 1 }, label: "Write unknown block" },
+      { type: "ASSIGN_POINTER", target: { kind: "variable", name: "ghost" }, source: { kind: "null" }, label: "Assign undeclared variable" }
+    ];
+
+    let snapshots: ReturnType<typeof runMemoryProgram> = [];
+    expect(() => {
+      snapshots = runMemoryProgram(badCommands);
+    }).not.toThrow();
+
+    expect(snapshots).toHaveLength(badCommands.length + 1);
+
+    const invalid = snapshots.flatMap((snapshot) => snapshot.diagnostics).filter((diagnostic) => diagnostic.type === "INVALID_TARGET");
+    expect(invalid.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("validator flags a deliberate bad fixture", () => {
+    const bad: MemoryScenario = {
+      id: "bad-fixture",
+      title: "Bad",
+      category: "Fundamentals",
+      description: "Deliberately malformed.",
+      commands: [
+        { type: "DECLARE_VARIABLE", name: "orphan", dataType: "int", label: "Declare with no active frame" },
+        { type: "WRITE_ARRAY_INDEX", blockId: "heap-1", index: 0, value: { kind: "number", value: 1 }, label: "Unknown block" }
+      ],
+      codeLines: ["int main() {}"],
+      stepToLine: [0, 5]
+    };
+
+    const issues = validateScenario(bad);
+    expect(issues.some((issue) => issue.message.includes("no active stack frame"))).toBe(true);
+    expect(issues.some((issue) => issue.message.includes("unknown heap block"))).toBe(true);
+    expect(issues.some((issue) => issue.message.includes("out of bounds"))).toBe(true);
   });
 });
 

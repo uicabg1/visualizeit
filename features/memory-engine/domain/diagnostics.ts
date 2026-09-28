@@ -5,7 +5,8 @@ export type DiagnosticType =
   | "NULL_POINTER_DEREFERENCE"
   | "USE_AFTER_FREE"
   | "HEAP_FRAGMENTATION"
-  | "BUFFER_OVERFLOW";
+  | "BUFFER_OVERFLOW"
+  | "INVALID_TARGET";
 
 export type DiagnosticSeverity = "info" | "warning" | "error";
 

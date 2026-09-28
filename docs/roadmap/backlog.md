@@ -1,8 +1,8 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T3 ✅ done). One task = one branch, token-saving rules
+**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ done). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
-**Tests:** 52 green · `pnpm test`
+**Tests:** 71 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
 
 ---
@@ -50,7 +50,7 @@ Approved 2026-09-28 after full-project review. Goal: make "add new scenario" saf
 - **Fix:** derive all copy from `memoryEngineScenarios.length`; rewrite about-page list to `map(memoryEngineScenarios)` (fixtures = pure data, server-importable; verify it has no "use client" deps — it doesn't). Keep `color` mapping local to about page if needed (`category` → color already derivable).
 - **Acceptance:** zero literal scenario counts in TSX; `grep -rn "scenarios.length\|8 scenarios\|7 scenarios" components app` clean; tests green (fixtures still 8).
 
-### T-REFACTOR-2 — Fixture validator + throw→diagnostic · **P0**
+### ~~T-REFACTOR-2 — Fixture validator + throw→diagnostic~~ · **DONE 2026-09-28** (`refactor/t-refactor-2`) — see handoff "What Was Done (T-REFACTOR-2)"
 
 - **Problem:** engine `throw`s on malformed commands (`features/memory-engine/simulation/memoryEngine.ts:84,108,115,132,139,233,280,331`). Throws inside `useMemo` (`MemoryWorkspace.tsx:56`) → typo in a new scenario crashes whole page in prod. No invariant tests today (`memoryEngine.test.ts:141` checks labels/length only).
 - **Fix (2 steps, same branch):**
