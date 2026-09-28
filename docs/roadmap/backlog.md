@@ -1,7 +1,7 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-05-14
-**Live:** https://visualizeit-7r0e4jlia-uicabgadiel67-1227s-projects.vercel.app
+**Last updated:** 2026-09-28 (docs pruning — content current as of T-CONTENT-1)
+**Live:** https://visualizeit-two.vercel.app
 **Tests:** 49 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
 
@@ -29,11 +29,11 @@ Next.js App Router app at `app/page.tsx` rendering `<MemoryWorkspace />` (client
 - `pedagogy/explainEvent.ts` — snapshot → human explanation lines. Recursive- and diagnostic-aware.
 
 UI in `components/memory/`:
-- `MemoryWorkspace.tsx` — orchestrator. Owns scenario selection, step index, play/pause, URL sync (`?scenario=&step=`), keyboard shortcuts (Space/Arrows), Share button, welcome overlay state machine, ResizeObserver feeding `containerWidth` into `layoutMemoryScene`.
+- `MemoryWorkspace.tsx` — orchestrator. Owns scenario selection, step index, play/pause, URL sync (`?scenario=&step=`), keyboard shortcuts (Space/Arrows/F/Esc), Share button, welcome overlay state machine, fullscreen mode, tablet drawer, ResizeObserver feeding `containerWidth` into `layoutMemoryScene`.
 - `MemoryCanvas.tsx` — Canvas2D renderer. Hit-test for click selection. No fitRatio (removed Task 9).
-- `MemorySidebar.tsx` — scenario list grouped by category.
+- `ScenarioSidebar.tsx` — scenario list grouped by category, search.
 - `ExplanationPanel.tsx` — Code tab (real C source w/ `.is-active` line highlight) + Explanation tab (pedagogy lines).
-- `StepBanner.tsx`, `step-dots` (inline in workspace) — step indicators.
+- `StepBanner.tsx`, `step-dots` (inline in workspace) — step indicators. `MemoryControls.tsx` — navbar playback cluster. `PhoneGate.tsx` — <768px gate with Copy Link.
 
 Layout: `app/globals.css` tokens (`--accent-amber`, `--color-pointer`, `--bg-base/elevated/floating`, `--border-default`, `--text-primary/secondary/muted`, `--radius-sm`).
 
@@ -209,7 +209,7 @@ Deploy: `vercel deploy --prod -y --scope uicabgadiel67-1227s-projects` (CLI auth
 
 - **Problem:** `/?scenario=recursive-stack` has the same `<title>` as the root. Search engines see one page.
 - **Files likely affected:** `app/page.tsx` — `generateMetadata({ searchParams })`; derive title from scenario label. Sitemap optional (`app/sitemap.ts`).
-- **Acceptance criteria:** Each scenario URL has unique `<title>`, `<meta description>`. View-source confirms. Sitemap lists all 7 scenarios.
+- **Acceptance criteria:** Each scenario URL has unique `<title>`, `<meta description>`. View-source confirms. Sitemap lists all 8 scenarios.
 
 ### T-TECH-3 — Phase 3 WASM acceleration · **P3** · long horizon
 
@@ -235,3 +235,5 @@ Deploy: `vercel deploy --prod -y --scope uicabgadiel67-1227s-projects` (CLI auth
 - T16: Step-progress dot row.
 - T17a: Tablet responsive collapse (768–1023px drawer + single-column).
 - T17b: Phone gate (<768px) + `/about` mobile audit.
+- T-UX-1: Fullscreen canvas mode (`f` / Esc, navbar focus button).
+- T-CONTENT-1: `buffer-overflow` scenario + `BUFFER_OVERFLOW` diagnostic (`HeapBlock.capacity`, 49 tests).

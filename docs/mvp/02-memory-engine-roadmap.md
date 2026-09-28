@@ -23,7 +23,8 @@ Success criteria:
 ## Phase 2: Interactive Canvas Visualizer ✅ DONE (2026-05-04)
 
 > Phase 2.1 — alg0.dev Visual Alignment ✅ DONE (2026-05-10)
-> Phase 2.2 — Brand Identity & Visual Refinement 🔵 ACTIVE (2026-05-11)
+> Phase 2.2 — Brand Identity & Visual Refinement ✅ DONE (2026-05-11)
+> Phase 2.5 — Content Expansion + Production Launch 🔵 ACTIVE (2026-05-12 →): 8 scenarios, 49 tests, responsive layouts, URL share state, deployed at https://visualizeit-two.vercel.app. Task queue in [`docs/roadmap/backlog.md`](../roadmap/backlog.md).
 
 Goal: turn simulation snapshots into a polished interactive learning experience.
 

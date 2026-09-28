@@ -1,104 +1,77 @@
 # VisualizeIT
 
-**[Live Demo →](https://visualizeit-uicabgadiel67-1227s-projects.vercel.app)**
+**[Live Demo →](https://visualizeit-two.vercel.app)**
 
-VisualizeIT is a high-performance interactive web platform for explaining dense technical concepts through real-time visual simulation. The first MVP focuses on a low-level C memory visualizer that demonstrates stack frames, heap allocation, pointers, structs, fragmentation, leaks, and deterministic replay of memory operations.
+VisualizeIT is a high-performance interactive web platform for explaining dense technical concepts through real-time deterministic simulation. The MVP is a low-level C memory visualizer: stack frames, heap allocation, pointers, structs, recursion, fragmentation, leaks, dangling pointers, and buffer overflows — stepped through with timeline replay and per-line C code highlighting.
 
-The project is designed as a portfolio-grade engineering case study: not just a beautiful interface, but a client-side system with clear simulation boundaries, measurable performance targets, and a modular architecture ready for future educational engines.
+It is built as a portfolio-grade engineering case study: clear simulation boundaries, deterministic state, measurable targets, and a modular architecture ready for future educational engines.
 
-## MVP Focus
+## Current Status
 
-The initial deliverable is the **Low-Level Memory Engine**:
+| Phase | Status |
+|-------|--------|
+| 1 — Deterministic Simulation Foundation | ✅ Done (2026-05-03) |
+| 2 — Interactive Canvas Visualizer | ✅ Done (2026-05-04) |
+| 2.1 — alg0.dev Visual Alignment | ✅ Done (2026-05-10) |
+| 2.2 — Brand Identity & Visual Refinement | ✅ Done (2026-05-11) |
+| 2.5 — Content Expansion + Production Launch | 🔵 Active (T1–T17b done) |
+| 3 — WASM Acceleration | ⏳ Not started |
 
-- Visualizes C memory behavior step by step.
-- Shows stack vs heap allocation.
-- Explains `malloc`, `free`, dangling pointers, leaks, and fragmentation.
-- Represents structs, arrays, pointers, and nested data layouts.
-- Supports timeline replay, pause, rewind, and annotated execution.
+**Today:** 8 scenarios · 49 passing tests · deployed to Vercel production.
 
-Future modules for IPv6/SLAAC, discrete mathematics, and explainable AI are documented as expansion tracks, not as MVP scope.
+### Features live
 
-## Why Next.js
+- Step-through memory simulation: play/pause, speed control, scrub, clickable step dots, deterministic replay.
+- Real C source per scenario with per-step line highlighting; recursive- and diagnostic-aware explanations.
+- Canvas visualizer with tweened step transitions, click-to-inspect elements, fullscreen focus mode (`f`).
+- Shareable URL state (`?scenario=<id>&step=<n>`) + Share button + static `/about` page.
+- Keyboard shortcuts (Space, arrows), categorized scenario sidebar with search, welcome title card.
+- Responsive: 3-column desktop → tablet drawer (768–1023px) → intentional phone gate (<768px).
 
-Next.js 15 with the App Router provides a production-ready foundation for a technical visualization platform:
+## Architecture
 
-- Strong routing and layout primitives for modular learning experiences.
-- TypeScript-first architecture for reliable domain boundaries.
-- Static generation and edge-ready deployment paths for portfolio distribution.
-- A clean path to future API routes, AI-assisted explanations, and server-side content workflows.
+Strict TypeScript, framework-independent simulation core:
 
-## Why WebAssembly
+```
+features/memory-engine/
+  domain/        — commands, snapshots, diagnostics, types (contracts)
+  simulation/    — memoryEngine.ts (reducer), fixtures.ts (scenarios)
+  pedagogy/      — explainEvent.ts (snapshot → explanation lines)
+  rendering/     — layout, Canvas2D draw, interpolation, playback speed
+components/memory/  — MemoryWorkspace (orchestrator), Canvas, Sidebar,
+                      ExplanationPanel, Controls, StepBanner, PhoneGate
+app/                — App Router pages (/, /about), tokens in globals.css
+```
 
-WebAssembly is used where deterministic simulation and compact data processing matter. For the memory engine, the goal is to model C-like behavior with predictable execution, explicit memory ownership semantics, and efficient transfer of simulation snapshots to the UI layer.
+- The engine is a pure reducer: same commands in → same snapshots out. UI never mutates simulation state.
+- Per ADR-001, the simulation stays in TypeScript until profiling justifies WebAssembly (Phase 3, planned: C model → WASM + Web Worker with parity tests).
 
-The rendering layer remains in TypeScript, Canvas, and React. WASM does not drive the UI directly; it produces structured simulation state that the frontend can render, inspect, and replay.
+## Tech Stack
 
-## Technical Direction
-
-Planned stack:
-
-- **Framework:** Next.js 15, App Router, strict TypeScript.
-- **2D Rendering:** Canvas API for memory maps, timelines, and technical board-style visuals.
-- **Animation:** Framer Motion for interface transitions and guided explanations.
-- **3D Rendering:** React Three Fiber / Three.js for future network and AI embedding modules.
-- **Simulation Core:** C/C++ compiled to WebAssembly for deterministic workloads.
-- **Concurrency:** Web Workers for simulation workloads that should not block the main thread.
+- **Next.js 15** (App Router, strict TypeScript, `next/font` self-hosted fonts).
+- **Canvas 2D** rendering with `requestAnimationFrame` transitions.
+- **Vitest** for the simulation, pedagogy, layout, and interpolation suites.
+- **Vercel** for production deploys.
 
 ## Local Development
 
-Install dependencies:
-
 ```bash
 pnpm install
-```
-
-Run the development server:
-
-```bash
-pnpm dev
-```
-
-Run the verification suite:
-
-```bash
-pnpm test
+pnpm dev        # http://localhost:3000
+pnpm test       # vitest run — 49 tests
 pnpm lint
 pnpm build
 ```
-
-Run the production build locally:
-
-```bash
-pnpm build
-pnpm start
-```
-
-## Current Implementation State
-
-Phase 1 is implemented:
-
-- Strict TypeScript project scaffold.
-- Deterministic TypeScript memory simulation.
-- Domain contracts for commands, snapshots, diagnostics, stack frames, heap blocks, pointers, and values.
-- Four MVP scenario fixtures.
-- Unit tests for simulation behavior and deterministic explanations.
-- Root debug view that renders scenario summaries from real snapshots.
-
-Not implemented yet:
-
-- Canvas visualizer.
-- WASM acceleration.
-- Web Worker execution.
-- Future modules.
 
 ## Documentation Map
 
 Start here:
 
-- `docs/00-context-index.md`: documentation index and context guide.
-- `docs/architecture/01-system-architecture.md`: system architecture document with Mermaid diagram.
-- `docs/architecture/02-directory-structure.md`: planned Next.js project structure.
-- `docs/architecture/03-performance-and-simulation-strategy.md`: performance, WASM, workers, and replay strategy.
-- `docs/mvp/01-memory-engine-functional-spec.md`: MVP feature specification.
-- `docs/mvp/02-memory-engine-roadmap.md`: three-phase MVP roadmap.
-- `docs/future-modules/01-expansion-backlog.md`: future module documentation.
+- [`docs/00-context-index.md`](docs/00-context-index.md) — index, phase status, guardrails.
+- [`docs/roadmap/backlog.md`](docs/roadmap/backlog.md) — active task queue (Phase 2.5 → 3).
+- [`docs/mvp/01-memory-engine-functional-spec.md`](docs/mvp/01-memory-engine-functional-spec.md) — MVP feature spec.
+- [`docs/mvp/02-memory-engine-roadmap.md`](docs/mvp/02-memory-engine-roadmap.md) — three-phase roadmap.
+- [`docs/architecture/`](docs/architecture) — system architecture, directory structure, performance strategy.
+- [`docs/decisions/adr-001-typescript-simulation-before-wasm.md`](docs/decisions/adr-001-typescript-simulation-before-wasm.md) — key technical decision.
+- [`docs/roadmap/phase-3-wasm-overview.md`](docs/roadmap/phase-3-wasm-overview.md) — Phase 3 planning.
+- [`docs/future-modules/01-expansion-backlog.md`](docs/future-modules/01-expansion-backlog.md) — IPv6/SLAAC, discrete math, XAI (not MVP scope).

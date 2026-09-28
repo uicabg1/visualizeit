@@ -1,6 +1,6 @@
-# Planned File Directory Structure
+# File Directory Structure
 
-This structure is for the future implementation phase. The current project contains documentation only.
+Original planning doc (Phase 0). As of Phase 2.5 the implemented structure follows this plan with deviations: the workspace lives at `app/page.tsx` (no `app/memory/` route), there is a static `app/about/`, `OperationTimeline` was removed (scrub moved to navbar + step dots), `ScenarioSidebar`/`StepBanner`/`PhoneGate`/`interpolateScene` were added, hooks are inlined in `MemoryWorkspace` (no `hooks/` dir), and `lib/wasm`, `workers/`, `wasm/` remain Phase 3 scope only.
 
 ## Target Structure
 
