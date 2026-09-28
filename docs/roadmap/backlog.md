@@ -1,6 +1,6 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅; T4b next, then T5/T6/T7 P1). One task = one branch, token-saving rules
+**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅; T5 next, then T6/T7 P1). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
 **Tests:** 71 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
@@ -74,7 +74,7 @@ Approved 2026-09-28 after full-project review. Goal: make "add new scenario" saf
 - **Fix:** pure move into `components/memory/hooks/`: `useUrlState.ts` (`MemoryWorkspace.tsx:24-31,117-123`), `usePlayback.ts` (`:38,40,163-178`), `useMediaViewport.ts` (`:45,109-115` + phone check). No logic rewrite. Files: 4 (3 new + workspace).
 - **Acceptance:** `pnpm test` green (engine untouched); smoke: deep-link restore, play/pause/speed, tablet drawer + phone gate unchanged.
 
-### T-REFACTOR-4b — Extract toolbar + welcome overlay · **P1**
+### ~~T-REFACTOR-4b — Extract toolbar + welcome overlay~~ · **DONE 2026-09-28** (`refactor/t-refactor-4b`) — see handoff "What Was Done (T-REFACTOR-4b)"
 
 - **Fix:** after 4a. `components/memory/WorkspaceToolbar.tsx` (`:251-336` Focus/Share/About + copied state, inline styles → globals.css classes) + `components/memory/WelcomeOverlay.tsx` (overlayBg/renderWelcomeOverlay as-is, dedupe `:438-439`). Files: 4 (2 new + workspace + globals.css).
 - **Acceptance:** workspace <200 lines; zero `style={{` in components/; smoke: fullscreen/share/drawer/welcome unchanged behavior.

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { explainEvent } from "@/features/memory-engine/pedagogy/explainEvent";
@@ -14,6 +13,8 @@ import { MemoryControls } from "./MemoryControls";
 import { PhoneGate } from "./PhoneGate";
 import { ScenarioSidebar } from "./ScenarioSidebar";
 import { StepBanner } from "./StepBanner";
+import { WelcomeOverlay } from "./WelcomeOverlay";
+import { WorkspaceToolbar } from "./WorkspaceToolbar";
 import { clampStep, usePlayback } from "./hooks/usePlayback";
 import { useMediaViewport } from "./hooks/useMediaViewport";
 import { useUrlState, useUrlSync } from "./hooks/useUrlState";
@@ -26,7 +27,6 @@ export function MemoryWorkspace() {
     initialStep === 0 ? "visible" : "hidden"
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<LearningTab>("code");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -138,7 +138,7 @@ export function MemoryWorkspace() {
   if (!scenario || !activeSnapshot || !activeScene) {
     return (
       <main className="memory-workspace">
-        <p className="muted" style={{ padding: "32px" }}>No memory scenarios are available.</p>
+        <p className="muted memory-workspace__empty">No memory scenarios are available.</p>
       </main>
     );
   }
@@ -195,92 +195,7 @@ export function MemoryWorkspace() {
             />
           </div>
 
-          <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: "8px" }}>
-            <button
-              onClick={() => setIsFullscreen((c) => !c)}
-              title={isFullscreen ? "Exit fullscreen (Esc or f)" : "Fullscreen (f)"}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "5px",
-                fontSize: "12px",
-                fontWeight: 500,
-                color: isFullscreen ? "var(--accent-amber)" : "var(--text-secondary)",
-                background: isFullscreen ? "var(--accent-amber-dim)" : "none",
-                border: `1px solid ${isFullscreen ? "var(--accent-amber-border)" : "var(--border-default)"}`,
-                borderRadius: "var(--radius-md)",
-                padding: "4px 10px",
-                cursor: "pointer",
-                transition: "color 150ms ease, border-color 150ms ease, background 150ms ease",
-              }}
-              aria-pressed={isFullscreen}
-            >
-              {isFullscreen ? (
-                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-                  <path d="M5 1H1v4M11 1h4v4M5 15H1v-4M11 15h4v-4"/>
-                </svg>
-              ) : (
-                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-                  <path d="M1 5V1h4M15 5V1h-4M1 11v4h4M15 11v4h-4"/>
-                </svg>
-              )}
-              {isFullscreen ? "Exit" : "Focus"}
-            </button>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1500);
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "5px",
-                fontSize: "12px",
-                fontWeight: 500,
-                color: copied ? "var(--color-pointer)" : "var(--text-secondary)",
-                background: "none",
-                border: `1px solid ${copied ? "var(--color-pointer)" : "var(--border-default)"}`,
-                borderRadius: "var(--radius-md)",
-                padding: "4px 10px",
-                cursor: "pointer",
-                transition: "color 150ms ease, border-color 150ms ease",
-                opacity: copied ? 1 : undefined,
-              }}
-            >
-              {copied ? (
-                <>
-                  <svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true">
-                    <path d="M3 8l3.5 3.5L13 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true">
-                    <path d="M6.5 9.5a3.5 3.5 0 0 0 5 0l2-2a3.5 3.5 0 0 0-5-5l-1 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    <path d="M9.5 6.5a3.5 3.5 0 0 0-5 0l-2 2a3.5 3.5 0 0 0 5 5l1-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
-                  Share
-                </>
-              )}
-            </button>
-            <Link
-              href="/about"
-              style={{
-                fontSize: "12px",
-                fontWeight: 500,
-                color: "var(--text-secondary)",
-                textDecoration: "none",
-                padding: "4px 10px",
-                border: "1px solid var(--border-default)",
-                borderRadius: "var(--radius-md)",
-                transition: "color 150ms ease, border-color 150ms ease"
-              }}
-            >
-              About
-            </Link>
-          </div>
+          <WorkspaceToolbar isFullscreen={isFullscreen} onToggleFullscreen={() => setIsFullscreen((c) => !c)} />
         </div>
 
         <div className="memory-workspace__navbar-meta" aria-live="polite">
@@ -339,51 +254,16 @@ export function MemoryWorkspace() {
         />
       </div>
 
-      {overlayState !== "hidden" && renderWelcomeOverlay(
-        overlayState === "exiting",
-        () => {
-          if (overlayState === "visible") {
-            setStepIndex((c) => clampStep(c + 1, maxStep));
-          }
-        }
+      {overlayState !== "hidden" && (
+        <WelcomeOverlay
+          isExiting={overlayState === "exiting"}
+          onTap={() => {
+            if (overlayState === "visible") {
+              setStepIndex((c) => clampStep(c + 1, maxStep));
+            }
+          }}
+        />
       )}
     </main>
-  );
-}
-
-function overlayBg() {
-  return (
-    <div className="welcome-overlay__bg">
-      <svg viewBox="0 0 32 32" width="60" height="60" className="welcome-overlay__logo" aria-hidden="true">
-        <rect x="2" y="2" width="28" height="28" rx="6" fill="#F5B82E"/>
-        <path d="M9 9 L16 23 L23 9" stroke="#0B0D10" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-        <rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="rgba(124,92,255,0.35)" strokeWidth="1"/>
-      </svg>
-      <h1 className="welcome-overlay__headline">
-        <span className="welcome-overlay__line1">Step through</span>
-        <span className="welcome-overlay__line2"><em className="welcome-overlay__accent">C</em> memory, live.</span>
-      </h1>
-      <p className="welcome-overlay__sub">{memoryEngineScenarios.length} scenarios · Stack · Heap · Pointers</p>
-      <div className="welcome-overlay__chips">
-        <span className="welcome-overlay__chip welcome-overlay__chip--kb"><kbd>Space</kbd> Play</span>
-        <span className="welcome-overlay__chip welcome-overlay__chip--kb"><kbd>→</kbd> Next step</span>
-        <span className="welcome-overlay__chip welcome-overlay__chip--touch">Tap anywhere to start</span>
-      </div>
-    </div>
-  );
-}
-
-function renderWelcomeOverlay(isExiting: boolean, onTap: () => void) {
-  return (
-    <div
-      className={`welcome-overlay${isExiting ? " is-exiting" : ""}`}
-      onClick={onTap}
-      role="button"
-      aria-label="Tap to start"
-      tabIndex={-1}
-    >
-      <div className="welcome-overlay__panel welcome-overlay__panel--top">{overlayBg()}</div>
-      <div className="welcome-overlay__panel welcome-overlay__panel--bottom">{overlayBg()}</div>
-    </div>
   );
 }

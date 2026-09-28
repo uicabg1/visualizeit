@@ -212,6 +212,54 @@ select {
   min-width: 0;
 }
 
+.memory-workspace__toolbar {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.memory-workspace__toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.memory-workspace__toolbar-btn.is-active {
+  color: var(--accent-amber);
+  background: var(--accent-amber-dim);
+  border-color: var(--accent-amber-border);
+}
+
+.memory-workspace__toolbar-btn.is-copied {
+  color: var(--color-pointer);
+  border-color: var(--color-pointer);
+}
+
+.memory-workspace__toolbar-link {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 4px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.memory-workspace__empty {
+  padding: 32px;
+}
+
 .memory-workspace__navbar-meta {
   display: flex;
   align-items: center;
