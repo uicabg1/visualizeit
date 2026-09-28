@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { memoryEngineScenarios } from "@/features/memory-engine/simulation/fixtures";
+
 export function PhoneGate() {
   const [copied, setCopied] = useState(false);
 
@@ -38,7 +40,7 @@ export function PhoneGate() {
         </p>
 
         <p className="phone-gate__label">
-          7 scenarios · designed for 768 px and wider
+          {memoryEngineScenarios.length} scenarios · designed for 768 px and wider
         </p>
 
         <div className="phone-gate__actions">

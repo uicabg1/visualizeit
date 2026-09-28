@@ -416,7 +416,7 @@ function overlayBg() {
         <span className="welcome-overlay__line1">Step through</span>
         <span className="welcome-overlay__line2"><em className="welcome-overlay__accent">C</em> memory, live.</span>
       </h1>
-      <p className="welcome-overlay__sub">8 scenarios · Stack · Heap · Pointers</p>
+      <p className="welcome-overlay__sub">{memoryEngineScenarios.length} scenarios · Stack · Heap · Pointers</p>
       <div className="welcome-overlay__chips">
         <span className="welcome-overlay__chip welcome-overlay__chip--kb"><kbd>Space</kbd> Play</span>
         <span className="welcome-overlay__chip welcome-overlay__chip--kb"><kbd>→</kbd> Next step</span>

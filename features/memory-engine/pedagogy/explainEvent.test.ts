@@ -233,7 +233,8 @@ describe("explainEvent", () => {
       { type: "FREE", pointer: { kind: "variable", name: "p" }, label: "Free int again" }
     ];
     const snapshots = runMemoryProgram(commands);
-    const snap = snapshots[snapshots.length - 1]!;
+    const snap = snapshots.at(-1);
+    if (!snap) throw new Error("no snapshots");
     expect(explainEvent(snap)).toContain("Double free — freeing the same block twice is undefined behavior.");
   });
 
