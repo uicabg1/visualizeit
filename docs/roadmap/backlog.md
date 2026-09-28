@@ -1,6 +1,6 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-09-28 (docs pruning — content current as of T-CONTENT-1)
+**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ done). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
 **Tests:** 49 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
@@ -20,6 +20,104 @@
 
 ---
 
+## Refactor Queue (Phase 2.5 hardening) — T-REFACTOR-1 → 12
+
+Approved 2026-09-28 after full-project review. Goal: make "add new scenario" safe + freeze snapshot/target schema before Phase 3 WASM.
+
+**Session protocol — one task = one branch = one session** (split if >5 files touched):
+
+1. Branch from latest `main`: `refactor/<id>` (`fix/<id>` if behavior bug).
+2. Apply edit at pinned `file:line` below. **Do not re-read whole files** — anchor on line, grep only what you need.
+3. Verify before merge: scoped `pnpm exec vitest run <touched>.test.ts` → full `pnpm test` → `pnpm lint` (scope `app components features`) → `pnpm build`. Browser smoke only if UI touched.
+4. Merge to `main`, deploy only at user request. Append "What Was Done" to the 2026-05-12 handoff.
+5. Never merge with red tests. Revert = delete branch; `main` stays clean.
+
+**Token-saving rules (ahorrador mode) — mandatory for subagents:**
+
+- Main thread reads each file **once per task**, passes snippets to subagents inline.
+- Subagent locate → `cavecrew-investigator` only, one search pass, output = `file:line` refs only.
+- Subagent edit → `cavecrew-builder`, prompt MUST include target files + line anchors + snippet; it must not explore or re-read other files.
+- Subagent review → `cavecrew-reviewer`, diff-only (`git diff main...refactor/<id>`), no repo reads.
+- No vanilla `Explore`/`general` agents for these tasks (they re-read everything).
+- Prefer `grep -n pattern file` over `Read` full file. Read max window: ±30 lines around anchor.
+
+**Order of necessity:** 1–3 = safety net before any new scenario. 4–7 = structural prep for new regions/lanes. 8–9 = cleanup. 10–11 = schema freeze for WASM parity. 12 = allocator model, Phase 3 gate.
+
+### ~~T-REFACTOR-1 — Single source of scenario truth~~ · **DONE 2026-09-28** (`refactor/t-refactor-1`) — see handoff "What Was Done (T-REFACTOR-1)"
+
+- **Problem:** counts/metadata hardcoded, already stale: `components/memory/PhoneGate.tsx:41` says "7 scenarios" (real: 8). `components/memory/MemoryWorkspace.tsx:419` "8 scenarios". `app/about/page.tsx:6,110` "8/Eight". `app/about/page.tsx:9-` keeps a **duplicated scenario list** (titles/categories/descriptions diverging from fixtures).
+- **Fix:** derive all copy from `memoryEngineScenarios.length`; rewrite about-page list to `map(memoryEngineScenarios)` (fixtures = pure data, server-importable; verify it has no "use client" deps — it doesn't). Keep `color` mapping local to about page if needed (`category` → color already derivable).
+- **Acceptance:** zero literal scenario counts in TSX; `grep -rn "scenarios.length\|8 scenarios\|7 scenarios" components app` clean; tests green (fixtures still 8).
+
+### T-REFACTOR-2 — Fixture validator + throw→diagnostic · **P0**
+
+- **Problem:** engine `throw`s on malformed commands (`features/memory-engine/simulation/memoryEngine.ts:84,108,115,132,139,233,280,331`). Throws inside `useMemo` (`MemoryWorkspace.tsx:56`) → typo in a new scenario crashes whole page in prod. No invariant tests today (`memoryEngine.test.ts:141` checks labels/length only).
+- **Fix (2 steps, same branch):**
+  1. New `simulation/validateScenario.ts` (pure fn) + tests: every scenario runs without throw; `stepToLine.length === commands.length`; all `stepToLine` indices in `codeLines` bounds; all referenced `blockId`/variable targets exist by sim-run; ids unique. Wire into `memoryEngine.test.ts` as `describe.each` over scenarios.
+  2. Convert engine `throw`s to `createDiagnostic(..., "error", ...)` + no-op for bad targets (keep `runMemoryProgram` total). Check `explainEvent.ts` + `layoutMemoryScene.ts` tolerate new diagnostic types (Set dedupe already there).
+- **Risk note:** step 2 changes behavior only for invalid programs — all 8 current scenarios must produce byte-identical snapshots (assert with `toEqual` golden before/after in same test file).
+- **Acceptance:** deliberate bad fixture in a test → snapshots returned, diagnostic emitted, no throw; `pnpm test` green.
+
+### T-REFACTOR-3 — WRITE_ARRAY_INDEX consistency · **P0**
+
+- **Problem:** `memoryEngine.ts:276-289` skips `allocated` check (WRITE_FIELD emits `USE_AFTER_FREE`, array-index doesn't), skips `capacity` check (no `BUFFER_OVERFLOW`), and `fields[index] = …` past end creates array holes → `undefined` nodes break `layoutMemoryScene` field maps (`.map` over holes = undefined rect → draw crash).
+- **Fix:** mirror WRITE_FIELD guards (allocated → USE_AFTER_FREE, capacity → BUFFER_OVERFLOW when `index >= capacity > 0`); keep dense-array semantics: append (no holes) when index === length, diagnostic + skip (or zero-fill, pick one and pin in comment… decide: **zero-fill to index**, pedagogically honest for C).
+- **Acceptance:** new tests: write on freed block → USE_AFTER_FREE; `[9]` on capacity-8 → BUFFER_OVERFLOW; `fields` never contains `undefined` (test scans).
+
+### T-REFACTOR-4 — Split MemoryWorkspace · **P1**
+
+- **Problem:** 442 lines, 15 state/ref + 8 effects + ~90 JSX lines with inline styles (`MemoryWorkspace.tsx:251-336` Focus/Share/About buttons) — only file using inline styles; `overlayBg()` rendered twice (`:438-439`).
+- **Fix:** extract `WorkspaceToolbar.tsx` (3 buttons + copied state, move inline styles → globals.css classes), `WelcomeOverlay.tsx` (overlayBg/renderWelcomeOverlay as-is), hooks `useUrlState.ts` (`:24-31,117-123`), `usePlayback.ts` (`:38,40,163-178`), `useMediaViewport.ts` (`:45,109-115` + phone check). Pure move — no logic rewrite.
+- **Acceptance:** workspace <200 lines; zero `style={{` in components/; 49 tests green; smoke: fullscreen/share/drawer/welcome unchanged behavior.
+
+### T-REFACTOR-5 — BrandMark component · **P1**
+
+- **Problem:** logo SVG duplicated 4× + icon: `MemoryWorkspace.tsx:224-227`, `:410-414` (in overlay too — 5 instances), `PhoneGate.tsx:25`, `app/about/page.tsx:81`, `app/icon.svg`. Hex `#F5B82E` hardcoded (token exists: `--accent-amber`, `globals.css:56`).
+- **Fix:** `components/BrandMark.tsx` (size prop, `currentColor`/var-based fills), swap all TSX uses. Leave `app/icon.svg` (static asset).
+- **Acceptance:** `grep -rn "F5B82E" components app` = 0 hits; visual smoke unchanged.
+
+### T-REFACTOR-6 — layoutFrame extraction · **P1**
+
+- **Problem:** `layoutMemoryScene.ts:171-227` (live frames) and `:231-269` (released ghosts) ~55 duplicated lines. New region lanes (T-CONTENT-4/7 static/rodata) would copy a third time.
+- **Fix:** extract shared `layoutFrame(frame, y, opts, isReleased)` returning `{node, nextY, pointerSources, selectables}`. Output identical — assert via scene snapshots on 3 region scenarios (`stack-frame-basics`, `recursive-stack`, buffer-overflow ghosts).
+- **Acceptance:** `layoutMemoryScene.test.ts` green + `deepEqual` check old vs new output before merge.
+
+### T-REFACTOR-7 — tweenRenderModel complete contract · **P1**
+
+- **Problem:** tween loses optional fields; consumer patches manually at `MemoryCanvas.tsx:75` (`{...tweened, stackLane, heapLane, releasedFrames}` — documented "critical fix"). Any future optional field = new landmine.
+- **Fix:** `tweenRenderModel` (rendering/interpolateScene.ts) passes through all non-tweenable fields itself; delete patch in canvas. Keep t=1 direct-paint path.
+- **Acceptance:** `interpolateScene.test.ts` adds case asserting lanes/ghosts present at t=0.5; step-through smoke with ghost frames visible mid-tween.
+
+### T-REFACTOR-8 — Dead code prune · **P2**
+
+- `domain/snapshots.ts:31-45`: `cloneSnapshot`, `getSnapshotSummary` — zero consumers (leftover from Phase 1 debug view). `getFinalSnapshot` keep (test consumer). Delete both + grep-confirm 0 refs.
+
+### T-REFACTOR-9 — URL sync first-mount guard · **P2**
+
+- **Problem:** `MemoryWorkspace.tsx:117-123` rewrites clean `/` → `/?scenario=stack-frame-basics&step=0` on first mount.
+- **Fix:** skip replace when derived params equal current URL (compare against `window.location.search` inside the debounce).
+- **Acceptance:** load `/` → URL stays `/`; deep link `?scenario=buffer-overflow&step=4` still restores + updates on step.
+
+### T-REFACTOR-10 — MemoryRef target model · **P2 · schema freeze for WASM**
+
+- **Problem:** `ValueTarget` = `variable | heapField` only (`domain/types.ts:27-36`); `PointerValue.targetBlockId` points only to heap blocks (`:18-23`). Blocks T-CONTENT-2 (stack arrays) + T-CONTENT-3 (`**pp` → pointer to stack variable).
+- **Fix:** generalize `ValueTarget` → add `{kind:"stackSlot", frameHint?, name, index?}`; `PointerValue` add optional `targetVariable?: {frameId, name}` (pointer-to-stack). Engine: resolver fn per union member (switch already centralized in read/writeTarget). Layout/draw/pedagogy: handle new variants minimally (render pointer edge to frame row).
+- **Order:** land BEFORE first scenario that needs it, then **snapshot schema is frozen** → Phase 3 parity target. ADR-002 note if semantics change.
+- **Acceptance:** all 8 current snapshots byte-identical (union additions optional-only); new tests with `**pp` fixture (no scenario UI needed).
+
+### T-REFACTOR-11 — Golden parity vectors · **P2 · WASM harness**
+
+- **Fix:** `memoryEngine.test.ts` addition: for each of 8 scenarios run engine, `JSON.stringify(final snapshot)` hash pinned in table (or `__snapshots__`-style file in test dir). Also assert JSON round-trip equality per snapshot (serializability invariant — worker/WASM boundary requires it; `event.command` currently serializable, keep it).
+- **Payoff:** regression net for every new scenario + ready-made TS↔WASM parity harness for Phase 3. Pure test, zero product risk.
+
+### T-REFACTOR-12 — Allocator model (first-fit, gaps) · **P3 · Phase 3 gate**
+
+- **Problem:** `nextAddress += size` linear, no gaps (`memoryEngine.ts:196`) → `HEAP_FRAGMENTATION` diagnostic is decorative. Real fragmentation scenarios (incl. the "new scenario" candidates: fragmentation, realloc) impossible without allocator model. This is also the honest WASM port target (per `docs/roadmap/phase-3-wasm-overview.md` + ADR-001: WASM justified by model depth/case study, not by current perf — TS reducer is microseconds).
+- **Scope:** TS first — free-list allocator, addresses can gap, `HEAP_FRAGMENTATION` derived from actual layout; THEN port the allocator to WASM as Phase 3 core.
+- **Do not start** without explicit approval (guardrail).
+
+---
+
 ## Project context (terse)
 
 Next.js App Router app at `app/page.tsx` rendering `<MemoryWorkspace />` (client) inside `<Suspense>`. State machine in `features/memory-engine/`:
@@ -33,7 +131,7 @@ UI in `components/memory/`:
 - `MemoryCanvas.tsx` — Canvas2D renderer. Hit-test for click selection. No fitRatio (removed Task 9).
 - `ScenarioSidebar.tsx` — scenario list grouped by category, search.
 - `ExplanationPanel.tsx` — Code tab (real C source w/ `.is-active` line highlight) + Explanation tab (pedagogy lines).
-- `StepBanner.tsx`, `step-dots` (inline in workspace) — step indicators. `MemoryControls.tsx` — navbar playback cluster. `PhoneGate.tsx` — <768px gate with Copy Link.
+- `StepBanner.tsx` — step indicator. `MemoryControls.tsx` — navbar playback cluster. `PhoneGate.tsx` — <768px gate with Copy Link. (T16 step-dots added then removed in `9ca932f` — navbar progress fill is the indicator.)
 
 Layout: `app/globals.css` tokens (`--accent-amber`, `--color-pointer`, `--bg-base/elevated/floating`, `--border-default`, `--text-primary/secondary/muted`, `--radius-sm`).
 
@@ -232,7 +330,7 @@ Deploy: `vercel deploy --prod -y --scope uicabgadiel67-1227s-projects` (CLI auth
 - T13: Keyboard shortcuts (Space/Arrows).
 - T14: Shareable URL state (`?scenario=&step=`).
 - T15: Share button (clipboard + "Copied!" feedback).
-- T16: Step-progress dot row.
+- T16: Step-progress dot row (later removed in `9ca932f` — navbar progress fill is the indicator).
 - T17a: Tablet responsive collapse (768–1023px drawer + single-column).
 - T17b: Phone gate (<768px) + `/about` mobile audit.
 - T-UX-1: Fullscreen canvas mode (`f` / Esc, navbar focus button).

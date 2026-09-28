@@ -27,7 +27,7 @@ IPv6/SLAAC, discrete mathematics, and Explainable AI remain future modules.
 
 ### Active Work (read first)
 
-- [`docs/roadmap/backlog.md`](roadmap/backlog.md) — P0–P3 task queue, one task per session.
+- [`docs/roadmap/backlog.md`](roadmap/backlog.md) — P0–P3 task queue + **T-REFACTOR-1→12 queue** (one task = one branch, token-saving subagent rules). Start here before new scenarios.
 - [`docs/checkpoints/current-state.md`](checkpoints/current-state.md) — local-only current-state snapshot.
 - [`docs/handoffs/2026-05-12-phase-2-recursive-stack-context.md`](handoffs/2026-05-12-phase-2-recursive-stack-context.md) — ongoing session handoff (per-task "What Was Done" notes).
 

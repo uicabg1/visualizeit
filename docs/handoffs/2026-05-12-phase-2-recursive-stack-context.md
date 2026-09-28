@@ -670,3 +670,16 @@ Added phone gate (<768px) + `/about` mobile audit. All T17 items now complete.
 
 **Production URL:** https://visualizeit-7r0e4jlia-uicabgadiel67-1227s-projects.vercel.app
 
+
+---
+
+## What Was Done (T-REFACTOR-1) — 2026-09-28 — branch `refactor/t-refactor-1`
+
+Single source of scenario truth. Removed every hardcoded scenario count/list:
+
+- `PhoneGate.tsx` — was "7 scenarios" (stale, actual 8) → `memoryEngineScenarios.length`.
+- `MemoryWorkspace.tsx` welcome overlay — "8 scenarios" → derived.
+- `app/about/page.tsx` — deleted duplicated 8-entry hardcoded list; maps `memoryEngineScenarios` with `categoryTones` (category→card color) + typed `categoryColors`. Count + hero + metadata.description derived from `scenarioCount`. Slight copy deltas (marketing rewordings) lost by design — fixtures is now the only truth.
+- Drive-by: fixed pre-existing lint error on main (`explainEvent.test.ts:236` non-null assertion → `snapshots.at(-1)` + throw guard). Lint scope `app components features` now clean.
+
+Verify: 49/49 tests · eslint clean · `next build` OK incl. static prerender of `/about` (runtime-validates the map).

@@ -1,75 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { memoryEngineScenarios, type MemoryScenarioCategory } from "@/features/memory-engine/simulation/fixtures";
+
+const scenarioCount = memoryEngineScenarios.length;
+
 export const metadata: Metadata = {
   title: "About — VisualizeIT",
-  description: "What VisualizeIT is and the 8 memory scenarios it covers."
+  description: `What VisualizeIT is and the ${scenarioCount} memory scenarios it covers.`
 };
 
-const scenarios = [
-  {
-    id: "stack-frame-basics",
-    title: "Stack Frames",
-    category: "Fundamentals",
-    description: "Function entry, local declaration, and stack cleanup.",
-    color: "amber"
-  },
-  {
-    id: "heap-allocation",
-    title: "Heap Blocks",
-    category: "Fundamentals",
-    description: "Pointer declaration, malloc, write, and free.",
-    color: "amber"
-  },
-  {
-    id: "recursive-stack",
-    title: "Recursive Stack",
-    category: "Fundamentals",
-    description: "factorial(3) call chain: frame accumulation, peak depth, and full unwind.",
-    color: "amber"
-  },
-  {
-    id: "pointer-arithmetic",
-    title: "Pointer Arithmetic",
-    category: "Fundamentals",
-    description: "Allocate an int array, write elements, advance a pointer through elements, then free.",
-    color: "amber"
-  },
-  {
-    id: "struct-with-pointer",
-    title: "Struct With Pointer",
-    category: "Data Structures",
-    description: "Struct fields and pointer field assignment across heap-allocated nodes.",
-    color: "teal"
-  },
-  {
-    id: "linked-list-traversal",
-    title: "Linked List Traversal",
-    category: "Data Structures",
-    description: "Build a two-node singly-linked list and traverse it with a moving pointer.",
-    color: "teal"
-  },
-  {
-    id: "leak-and-dangling-pointer",
-    title: "Leak & Dangling Pointer",
-    category: "Bugs & Pitfalls",
-    description: "Lost heap reference and pointer to released memory — two of the most common C bugs.",
-    color: "error"
-  },
-  {
-    id: "buffer-overflow",
-    title: "Buffer Overflow",
-    category: "Bugs & Pitfalls",
-    description: "strcpy writes past a fixed-size stack buffer, corrupting adjacent memory — a classic security vulnerability.",
-    color: "error"
-  }
-] as const;
+const categoryTones: Record<MemoryScenarioCategory, "amber" | "teal" | "error"> = {
+  Fundamentals: "amber",
+  "Data Structures": "teal",
+  "Bugs & Pitfalls": "error"
+};
 
-const categoryColors: Record<string, string> = {
+const categoryColors: Record<MemoryScenarioCategory, string> = {
   Fundamentals: "category--amber",
   "Data Structures": "category--teal",
   "Bugs & Pitfalls": "category--error"
 };
+
+const scenarios = memoryEngineScenarios.map((scenario) => ({
+  ...scenario,
+  color: categoryTones[scenario.category]
+}));
 
 export default function AboutPage() {
   return (
@@ -107,7 +63,7 @@ export default function AboutPage() {
             chase addresses — all synchronized to the source code line that caused it.
           </p>
           <p className="about-hero__description">
-            Eight interactive scenarios cover the fundamentals every systems programmer
+            {scenarioCount} interactive scenarios cover the fundamentals every systems programmer
             needs to internalize: from basic stack layout to memory leaks and dangling
             pointers. Each step shows both the visual state and a plain-English explanation.
           </p>
@@ -116,7 +72,7 @@ export default function AboutPage() {
         <section className="about-scenarios" aria-label="Available scenarios">
           <h2 className="about-scenarios__heading">
             <span className="about-scenarios__heading-label">Scenarios</span>
-            <span className="about-scenarios__count">8</span>
+            <span className="about-scenarios__count">{scenarioCount}</span>
           </h2>
 
           <ol className="about-scenario-list">
