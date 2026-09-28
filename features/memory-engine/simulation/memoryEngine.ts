@@ -77,15 +77,7 @@ const normalizeBlocks = (blocks: HeapBlock[]): HeapBlock[] =>
     fields: normalizeFields(block.fields, blocks)
   }));
 
-const currentFrame = (state: MutableState): StackFrame => {
-  const frame = state.stackFrames.at(-1);
-
-  if (!frame) {
-    throw new Error("A stack frame is required before declaring variables.");
-  }
-
-  return frame;
-};
+const currentFrame = (state: MutableState): StackFrame | null => state.stackFrames.at(-1) ?? null;
 
 const defaultValueFor = (dataType: string): MemoryValue => {
   if (dataType.includes("*")) {
@@ -105,14 +97,27 @@ const readTarget = (state: MutableState, target: ValueTarget): MemoryValue => {
       }
     }
 
-    throw new Error(`Unknown variable target: ${target.name}`);
+    addEventDiagnostic(
+      state,
+      createDiagnostic("INVALID_TARGET", "error", `Unknown variable target: ${target.name}.`, {
+        label: target.name
+      })
+    );
+    return { kind: "null" };
   }
 
   const block = state.heapBlocks.find((candidate) => candidate.id === target.blockId);
   const field = block?.fields.find((candidate) => candidate.name === target.fieldName);
 
   if (!block || !field) {
-    throw new Error(`Unknown heap field target: ${describeTarget(target)}`);
+    addEventDiagnostic(
+      state,
+      createDiagnostic("INVALID_TARGET", "error", `Unknown heap field target: ${describeTarget(target)}.`, {
+        id: target.blockId,
+        label: target.fieldName
+      })
+    );
+    return { kind: "null" };
   }
 
   return field.value;
@@ -129,14 +134,27 @@ const writeTarget = (state: MutableState, target: ValueTarget, value: MemoryValu
       }
     }
 
-    throw new Error(`Unknown variable target: ${target.name}`);
+    addEventDiagnostic(
+      state,
+      createDiagnostic("INVALID_TARGET", "error", `Unknown variable target: ${target.name}.`, {
+        label: target.name
+      })
+    );
+    return;
   }
 
   const block = state.heapBlocks.find((candidate) => candidate.id === target.blockId);
   const field = block?.fields.find((candidate) => candidate.name === target.fieldName);
 
   if (!block || !field) {
-    throw new Error(`Unknown heap field target: ${describeTarget(target)}`);
+    addEventDiagnostic(
+      state,
+      createDiagnostic("INVALID_TARGET", "error", `Unknown heap field target: ${describeTarget(target)}.`, {
+        id: target.blockId,
+        label: target.fieldName
+      })
+    );
+    return;
   }
 
   field.value = value;
@@ -168,6 +186,17 @@ const applyCommand = (state: MutableState, command: MemoryCommand, stepIndex: nu
 
     case "DECLARE_VARIABLE": {
       const frame = currentFrame(state);
+
+      if (!frame) {
+        addEventDiagnostic(
+          state,
+          createDiagnostic("INVALID_TARGET", "error", `Cannot declare ${command.name}: a stack frame is required before declaring variables.`, {
+            label: command.name
+          })
+        );
+        return;
+      }
+
       frame.variables.push({
         id: `${frame.id}-${command.name}`,
         name: command.name,
@@ -230,7 +259,13 @@ const applyCommand = (state: MutableState, command: MemoryCommand, stepIndex: nu
       const block = state.heapBlocks.find((candidate) => candidate.id === command.blockId);
 
       if (!block) {
-        throw new Error(`Unknown heap block: ${command.blockId}`);
+        addEventDiagnostic(
+          state,
+          createDiagnostic("INVALID_TARGET", "error", `Unknown heap block: ${command.blockId}.`, {
+            id: command.blockId
+          })
+        );
+        return;
       }
 
       if (!block.allocated) {
@@ -277,7 +312,13 @@ const applyCommand = (state: MutableState, command: MemoryCommand, stepIndex: nu
       const block = state.heapBlocks.find((candidate) => candidate.id === command.blockId);
 
       if (!block) {
-        throw new Error(`Unknown heap block: ${command.blockId}`);
+        addEventDiagnostic(
+          state,
+          createDiagnostic("INVALID_TARGET", "error", `Unknown heap block: ${command.blockId}.`, {
+            id: command.blockId
+          })
+        );
+        return;
       }
 
       if (!block.allocated) {
@@ -360,7 +401,13 @@ const applyCommand = (state: MutableState, command: MemoryCommand, stepIndex: nu
       const block = state.heapBlocks.find((candidate) => candidate.id === value.targetBlockId);
 
       if (!block) {
-        throw new Error(`Unknown heap block: ${value.targetBlockId}`);
+        addEventDiagnostic(
+          state,
+          createDiagnostic("INVALID_TARGET", "error", `Unknown heap block: ${value.targetBlockId}.`, {
+            id: value.targetBlockId ?? undefined
+          })
+        );
+        return;
       }
 
       if (!block.allocated) {

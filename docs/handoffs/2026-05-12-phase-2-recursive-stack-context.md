@@ -697,3 +697,16 @@ WRITE_ARRAY_INDEX consistency. Engine guards mirrored from WRITE_FIELD:
 Known semantics (pinned): capacity 0 (malloc without declared fields) never overflows — same `capacity > 0` gate as WRITE_FIELD. Repeated overflow writes each re-emit the diagnostic (per-write = honest C). Negative/fractional index robustness deferred to T-REFACTOR-2 validator (throw→diagnostic step 2 covers bad commands).
 
 **Env note:** `pnpm test`/`pnpm build` wrappers fail pre-existing `ERR_PNPM_IGNORED_BUILDS` (puppeteer/sharp/unrs-resolver) — run `pnpm approve-builds` once to fix. Equivalent `npx vitest run` (52/52 green) + `npx eslint app components features` (0 errors) + `npx next build` (route `/` 15.4 kB) all green. No UI touched — no browser smoke needed.
+
+---
+
+## What Was Done (T-REFACTOR-2) — 2026-09-28 — branch `refactor/t-refactor-2`
+
+Fixture validator + throw→diagnostic. `runMemoryProgram` is now total — a typo in a new scenario can no longer crash the page via `useMemo`.
+
+- `domain/diagnostics.ts` — new `INVALID_TARGET` error type. `explainEvent.ts` if-chain skips unknown types (tolerant, no edit needed); `layoutMemoryScene.ts` renders any diagnostic generically (message/severity) — verified, no edits.
+- `simulation/memoryEngine.ts` — 7 throws → `createDiagnostic("INVALID_TARGET", ...)` + no-op: `currentFrame` returns `StackFrame | null` (DECLARE w/o frame), `readTarget` unknown var/field → returns `{kind:"null"}` + diagnostic, `writeTarget` unknown → diagnostic + skip, `WRITE_FIELD`/`WRITE_ARRAY_INDEX`/`FREE` unknown block → diagnostic + return. Only remaining throw = `getFinalSnapshot` (test util, out of engine path).
+- `simulation/validateScenario.ts` (new, pure) — `validateScenario`/`validateScenarios`: ids unique, `stepToLine.length === commands.length` + in-bounds, static walk (frames/declared vars/malloc count) checks every referenced `blockId`/variable exists at that step, try/catch run + zero `INVALID_TARGET` in output snapshots.
+- `memoryEngine.test.ts` +19 tests — `describe.each` over all 8 scenarios (validator zero-issues, engine total, **golden parity**: djb2 hash of full+final snapshot JSON pinned pre-refactor → byte-identical confirmed); bad-fixture test: no throw, snapshots returned, ≥3 INVALID_TARGET; validator flags deliberate bad fixture.
+
+Verify: 71/71 tests (`pnpm --config.verify-deps-before-run=false test` — pnpm pre-run install still trips ERR_PNPM_IGNORED_BUILDS, untracked `pnpm-workspace.yaml` placeholder untouched) · eslint clean · build OK. No UI touched — no browser smoke.
