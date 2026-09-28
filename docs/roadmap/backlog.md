@@ -34,10 +34,11 @@ Approved 2026-09-28 after full-project review. Goal: make "add new scenario" saf
 
 **Token-saving rules (ahorrador mode) — mandatory for subagents:**
 
+- Agents configured in `.opencode/agent/` (restart opencode to load): `cavecrew-investigator` (locate, read-only, bash deny), `cavecrew-builder` (edits scoped to files in its prompt, zero exploration), `cavecrew-reviewer` (diff-only, git bash only). Top-level `opencode.json` permission = allow all (no prompts).
 - Main thread reads each file **once per task**, passes snippets to subagents inline.
-- Subagent locate → `cavecrew-investigator` only, one search pass, output = `file:line` refs only.
-- Subagent edit → `cavecrew-builder`, prompt MUST include target files + line anchors + snippet; it must not explore or re-read other files.
-- Subagent review → `cavecrew-reviewer`, diff-only (`git diff main...refactor/<id>`), no repo reads.
+- Locate → `cavecrew-investigator` only, one search pass, output = `file:line` refs only.
+- Edit → `cavecrew-builder`, prompt MUST include target files + line anchors + snippet; it returns `MISSING: <what>` instead of exploring if context is short.
+- Review → `cavecrew-reviewer`, diff-only, max 8 comments.
 - No vanilla `Explore`/`general` agents for these tasks (they re-read everything).
 - Prefer `grep -n pattern file` over `Read` full file. Read max window: ±30 lines around anchor.
 
