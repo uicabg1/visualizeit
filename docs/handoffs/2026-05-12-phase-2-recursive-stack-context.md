@@ -722,3 +722,14 @@ Extract workspace hooks — pure move, no logic rewrite. `MemoryWorkspace.tsx` 4
 - Acceptance check: keyboard/playback/URL-sync logic byte-identical, just relocated.
 
 Verify: 71/71 tests · eslint 0 problems · build clean (`/` 15.7 kB, +0.3 from hook boundary) · Playwright smoke 10/10: deep-link `?scenario=buffer-overflow&step=4` restores + URL stable, space/pause toggle, welcome overlay at `/`, tablet drawer open+Esc at 820px, phone gate at 375px (no canvas).
+
+## What Was Done (T-REFACTOR-4b) — 2026-09-28 — branch `refactor/t-refactor-4b`
+
+Extract toolbar + welcome overlay. `MemoryWorkspace.tsx` 389 → 269 lines; zero `style={{` left in `components/`.
+
+- `components/memory/WorkspaceToolbar.tsx` (new) — Focus/Share/About block (`:198-283`); owns `copied` state + clipboard/1.5s reset (`:29`) internally; `isFullscreen`/`onToggleFullscreen` stay in workspace (keyboard `f`/Esc depend on it).
+- `components/memory/WelcomeOverlay.tsx` (new) — `overlayBg()` + `renderWelcomeOverlay()` moved as-is; `overlayBg` re-render deduped via one `<OverlayBg />` component per panel (`:385-386`). Overlay remains `pointer-events:none` desktop by design — behavior unchanged.
+- `app/globals.css` — new classes after `.memory-workspace__navbar-center`: `.memory-workspace__toolbar` (+`-btn`, `.is-active`, `.is-copied`, `-link`) mirroring old inline styles 1:1; `.memory-workspace__empty` replaces `style={{padding:"32px"}}` (`:142`).
+- Workspace drops `Link` import + `copied` state; JSX floor reached — remaining lines are orchestrator state/effects (4a scope).
+
+Verify: vitest 71 green · eslint `app components features` 0 problems · `next build` clean (/ = 15.6 kB). Playwright smoke 18/18 GREEN (prod start): overlay visible→dismiss, Focus toggle + Esc, Share→Copied!→reset + clipboard URL, deep-link restore, tablet drawer, phone gate. Note: `pnpm exec` trips on `ERR_PNPM_IGNORED_BUILDS` (untracked `pnpm-workspace.yaml` has placeholder `allowBuilds` entries — env, pre-existing); used `./node_modules/.bin/*` directly.
