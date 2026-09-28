@@ -231,5 +231,66 @@ describe("memory engine simulation", () => {
     const validSnapshot = snapshots[5];
     expect(validSnapshot?.diagnostics.map((d) => d.type)).not.toContain("BUFFER_OVERFLOW");
   });
+
+  it("WRITE_ARRAY_INDEX on freed block: USE_AFTER_FREE emitted, write skipped, fields unchanged", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main" },
+      { type: "DECLARE_VARIABLE", name: "p", dataType: "int *" },
+      {
+        type: "MALLOC",
+        target: { kind: "variable", name: "p" },
+        size: 3,
+        label: "int[3]",
+        fields: [{ name: "[0]", dataType: "array-slot", value: { kind: "number", value: 0 } }]
+      },
+      { type: "FREE", pointer: { kind: "variable", name: "p" } },
+      { type: "WRITE_ARRAY_INDEX", blockId: "heap-1", index: 0, value: { kind: "number", value: 42 } }
+    ];
+
+    const final = getFinalSnapshot(runMemoryProgram(commands));
+    expect(final.diagnostics.map((d) => d.type)).toContain("USE_AFTER_FREE");
+    expect(final.heapBlocks[0]?.fields).toHaveLength(1);
+    expect(final.heapBlocks[0]?.fields[0]?.value).toEqual({ kind: "number", value: 0 });
+  });
+
+  it("WRITE_ARRAY_INDEX [9] on capacity-3 block: BUFFER_OVERFLOW emitted, array stays dense via zero-fill", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main" },
+      { type: "DECLARE_VARIABLE", name: "p", dataType: "int *" },
+      {
+        type: "MALLOC",
+        target: { kind: "variable", name: "p" },
+        size: 3,
+        label: "int[3]",
+        fields: [
+          { name: "[0]", dataType: "array-slot", value: { kind: "number", value: 1 } },
+          { name: "[1]", dataType: "array-slot", value: { kind: "number", value: 2 } },
+          { name: "[2]", dataType: "array-slot", value: { kind: "number", value: 3 } }
+        ]
+      },
+      { type: "WRITE_ARRAY_INDEX", blockId: "heap-1", index: 9, value: { kind: "number", value: 99 } }
+    ];
+
+    const final = getFinalSnapshot(runMemoryProgram(commands));
+    expect(final.diagnostics.map((d) => d.type)).toContain("BUFFER_OVERFLOW");
+    const fields = final.heapBlocks[0]?.fields ?? [];
+    expect(fields).toHaveLength(10);
+    for (let i = 0; i < fields.length; i++) {
+      expect(fields[i]).toBeDefined();
+    }
+    expect(fields[9]?.value).toEqual({ kind: "number", value: 99 });
+  });
+
+  it("all scenarios: heap block fields never contain holes after every step", () => {
+    for (const scenario of memoryEngineScenarios) {
+      for (const snapshot of runMemoryProgram(scenario.commands)) {
+        for (const block of snapshot.heapBlocks) {
+          for (let i = 0; i < block.fields.length; i++) {
+            expect(block.fields[i], `${scenario.id}: ${block.id}[${i}] is a hole`).toBeDefined();
+          }
+        }
+      }
+    }
+  });
 });
 

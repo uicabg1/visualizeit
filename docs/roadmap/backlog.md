@@ -1,8 +1,8 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ done). One task = one branch, token-saving rules
+**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T3 ✅ done). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
-**Tests:** 49 green · `pnpm test`
+**Tests:** 52 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
 
 ---
@@ -59,7 +59,7 @@ Approved 2026-09-28 after full-project review. Goal: make "add new scenario" saf
 - **Risk note:** step 2 changes behavior only for invalid programs — all 8 current scenarios must produce byte-identical snapshots (assert with `toEqual` golden before/after in same test file).
 - **Acceptance:** deliberate bad fixture in a test → snapshots returned, diagnostic emitted, no throw; `pnpm test` green.
 
-### T-REFACTOR-3 — WRITE_ARRAY_INDEX consistency · **P0**
+### ~~T-REFACTOR-3 — WRITE_ARRAY_INDEX consistency~~ · **DONE 2026-09-28** (`refactor/t-refactor-3`) — see handoff "What Was Done (T-REFACTOR-3)"
 
 - **Problem:** `memoryEngine.ts:276-289` skips `allocated` check (WRITE_FIELD emits `USE_AFTER_FREE`, array-index doesn't), skips `capacity` check (no `BUFFER_OVERFLOW`), and `fields[index] = …` past end creates array holes → `undefined` nodes break `layoutMemoryScene` field maps (`.map` over holes = undefined rect → draw crash).
 - **Fix:** mirror WRITE_FIELD guards (allocated → USE_AFTER_FREE, capacity → BUFFER_OVERFLOW when `index >= capacity > 0`); keep dense-array semantics: append (no holes) when index === length, diagnostic + skip (or zero-fill, pick one and pin in comment… decide: **zero-fill to index**, pedagogically honest for C).
