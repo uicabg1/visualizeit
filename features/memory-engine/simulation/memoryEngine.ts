@@ -280,6 +280,38 @@ const applyCommand = (state: MutableState, command: MemoryCommand, stepIndex: nu
         throw new Error(`Unknown heap block: ${command.blockId}`);
       }
 
+      if (!block.allocated) {
+        addEventDiagnostic(
+          state,
+          createDiagnostic("USE_AFTER_FREE", "error", `Cannot write to released block ${block.id}.`, {
+            id: block.id,
+            label: block.label
+          })
+        );
+        return;
+      }
+
+      if (block.capacity > 0 && command.index >= block.capacity) {
+        addEventDiagnostic(
+          state,
+          createDiagnostic("BUFFER_OVERFLOW", "error",
+            `Buffer overflow — write to [${command.index}] exceeds declared capacity of ${block.capacity}.`,
+            { id: block.id, label: block.label }
+          )
+        );
+      }
+
+      // Pinned decision (T-REFACTOR-3): zero-fill to index — keeps fields dense (array holes produced
+      // undefined nodes that crashed layoutMemoryScene field maps). Pedagogically honest for C:
+      // writing past the end materializes/corrupts the region, mirrors WRITE_FIELD overflow behavior.
+      while (block.fields.length < command.index) {
+        block.fields.push({
+          name: `[${block.fields.length}]`,
+          dataType: "array-slot",
+          value: { kind: "number", value: 0 }
+        });
+      }
+
       block.fields[command.index] = {
         name: `[${command.index}]`,
         dataType: "array-slot",

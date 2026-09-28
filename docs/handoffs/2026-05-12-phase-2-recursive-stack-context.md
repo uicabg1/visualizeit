@@ -683,3 +683,17 @@ Single source of scenario truth. Removed every hardcoded scenario count/list:
 - Drive-by: fixed pre-existing lint error on main (`explainEvent.test.ts:236` non-null assertion → `snapshots.at(-1)` + throw guard). Lint scope `app components features` now clean.
 
 Verify: 49/49 tests · eslint clean · `next build` OK incl. static prerender of `/about` (runtime-validates the map).
+
+
+---
+
+## What Was Done (T-REFACTOR-3) — 2026-09-28 — branch `refactor/t-refactor-3`
+
+WRITE_ARRAY_INDEX consistency. Engine guards mirrored from WRITE_FIELD:
+
+- `memoryEngine.ts` `case "WRITE_ARRAY_INDEX"` — (1) freed block → `USE_AFTER_FREE` diagnostic + write skipped (was: silent write into dead block); (2) `index >= capacity > 0` → `BUFFER_OVERFLOW` diagnostic, write still lands (matches WRITE_FIELD overflow behavior); (3) pinned decision **zero-fill to index**: intermediate slots pushed as `{kind:"number", value:0}` `array-slot` before the write — `fields` can no longer contain holes, so `layoutMemoryScene` `.map` over undefined nodes (draw crash path) is structurally impossible.
+- `memoryEngine.test.ts` +3 tests: freed-block write → USE_AFTER_FREE + fields unchanged; `[9]` on capacity-3 → BUFFER_OVERFLOW + dense 10-slot array, `[9]` = written value; all-8-scenarios hole-scan across every snapshot (invariant guard for future scenarios).
+
+Known semantics (pinned): capacity 0 (malloc without declared fields) never overflows — same `capacity > 0` gate as WRITE_FIELD. Repeated overflow writes each re-emit the diagnostic (per-write = honest C). Negative/fractional index robustness deferred to T-REFACTOR-2 validator (throw→diagnostic step 2 covers bad commands).
+
+**Env note:** `pnpm test`/`pnpm build` wrappers fail pre-existing `ERR_PNPM_IGNORED_BUILDS` (puppeteer/sharp/unrs-resolver) — run `pnpm approve-builds` once to fix. Equivalent `npx vitest run` (52/52 green) + `npx eslint app components features` (0 errors) + `npx next build` (route `/` 15.4 kB) all green. No UI touched — no browser smoke needed.
