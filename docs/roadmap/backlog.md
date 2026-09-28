@@ -1,6 +1,6 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ done). One task = one branch, token-saving rules
+**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅; T4 SPLIT → 4a/4b, scope guard >5 files). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
 **Tests:** 71 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
@@ -65,11 +65,19 @@ Approved 2026-09-28 after full-project review. Goal: make "add new scenario" saf
 - **Fix:** mirror WRITE_FIELD guards (allocated → USE_AFTER_FREE, capacity → BUFFER_OVERFLOW when `index >= capacity > 0`); keep dense-array semantics: append (no holes) when index === length, diagnostic + skip (or zero-fill, pick one and pin in comment… decide: **zero-fill to index**, pedagogically honest for C).
 - **Acceptance:** new tests: write on freed block → USE_AFTER_FREE; `[9]` on capacity-8 → BUFFER_OVERFLOW; `fields` never contains `undefined` (test scans).
 
-### T-REFACTOR-4 — Split MemoryWorkspace · **P1**
+### ~~T-REFACTOR-4 — Split MemoryWorkspace~~ · **SPLIT 2026-09-28** → 4a + 4b (fix list = 7 files > 5-file guard)
 
 - **Problem:** 442 lines, 15 state/ref + 8 effects + ~90 JSX lines with inline styles (`MemoryWorkspace.tsx:251-336` Focus/Share/About buttons) — only file using inline styles; `overlayBg()` rendered twice (`:438-439`).
-- **Fix:** extract `WorkspaceToolbar.tsx` (3 buttons + copied state, move inline styles → globals.css classes), `WelcomeOverlay.tsx` (overlayBg/renderWelcomeOverlay as-is), hooks `useUrlState.ts` (`:24-31,117-123`), `usePlayback.ts` (`:38,40,163-178`), `useMediaViewport.ts` (`:45,109-115` + phone check). Pure move — no logic rewrite.
-- **Acceptance:** workspace <200 lines; zero `style={{` in components/; 49 tests green; smoke: fullscreen/share/drawer/welcome unchanged behavior.
+
+### T-REFACTOR-4a — Extract workspace hooks · **P1**
+
+- **Fix:** pure move into `components/memory/hooks/`: `useUrlState.ts` (`MemoryWorkspace.tsx:24-31,117-123`), `usePlayback.ts` (`:38,40,163-178`), `useMediaViewport.ts` (`:45,109-115` + phone check). No logic rewrite. Files: 4 (3 new + workspace).
+- **Acceptance:** `pnpm test` green (engine untouched); smoke: deep-link restore, play/pause/speed, tablet drawer + phone gate unchanged.
+
+### T-REFACTOR-4b — Extract toolbar + welcome overlay · **P1**
+
+- **Fix:** after 4a. `components/memory/WorkspaceToolbar.tsx` (`:251-336` Focus/Share/About + copied state, inline styles → globals.css classes) + `components/memory/WelcomeOverlay.tsx` (overlayBg/renderWelcomeOverlay as-is, dedupe `:438-439`). Files: 4 (2 new + workspace + globals.css).
+- **Acceptance:** workspace <200 lines; zero `style={{` in components/; smoke: fullscreen/share/drawer/welcome unchanged behavior.
 
 ### T-REFACTOR-5 — BrandMark component · **P1**
 
