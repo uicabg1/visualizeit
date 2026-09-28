@@ -1,6 +1,6 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅; T4 SPLIT → 4a/4b, scope guard >5 files). One task = one branch, token-saving rules
+**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅; T4b next, then T5/T6/T7 P1). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
 **Tests:** 71 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
@@ -69,7 +69,7 @@ Approved 2026-09-28 after full-project review. Goal: make "add new scenario" saf
 
 - **Problem:** 442 lines, 15 state/ref + 8 effects + ~90 JSX lines with inline styles (`MemoryWorkspace.tsx:251-336` Focus/Share/About buttons) — only file using inline styles; `overlayBg()` rendered twice (`:438-439`).
 
-### T-REFACTOR-4a — Extract workspace hooks · **P1**
+### ~~T-REFACTOR-4a — Extract workspace hooks~~ · **DONE 2026-09-28** (`refactor/t-refactor-4a`) — see handoff "What Was Done (T-REFACTOR-4a)"
 
 - **Fix:** pure move into `components/memory/hooks/`: `useUrlState.ts` (`MemoryWorkspace.tsx:24-31,117-123`), `usePlayback.ts` (`:38,40,163-178`), `useMediaViewport.ts` (`:45,109-115` + phone check). No logic rewrite. Files: 4 (3 new + workspace).
 - **Acceptance:** `pnpm test` green (engine untouched); smoke: deep-link restore, play/pause/speed, tablet drawer + phone gate unchanged.

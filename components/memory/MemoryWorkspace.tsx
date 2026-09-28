@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { explainEvent } from "@/features/memory-engine/pedagogy/explainEvent";
 import type { MemorySceneSelectable } from "@/features/memory-engine/rendering/canvasTypes";
 import { layoutMemoryScene } from "@/features/memory-engine/rendering/layoutMemoryScene";
-import { getPlaybackIntervalMs, type PlaybackSpeed } from "@/features/memory-engine/rendering/playbackSpeed";
 import { memoryEngineScenarios } from "@/features/memory-engine/simulation/fixtures";
 import { runMemoryProgram } from "@/features/memory-engine/simulation/memoryEngine";
 import { ExplanationPanel, type LearningTab } from "./ExplanationPanel";
@@ -16,35 +14,22 @@ import { MemoryControls } from "./MemoryControls";
 import { PhoneGate } from "./PhoneGate";
 import { ScenarioSidebar } from "./ScenarioSidebar";
 import { StepBanner } from "./StepBanner";
-
-const clampStep = (candidate: number, maxStep: number): number =>
-  Math.min(Math.max(candidate, 0), maxStep);
+import { clampStep, usePlayback } from "./hooks/usePlayback";
+import { useMediaViewport } from "./hooks/useMediaViewport";
+import { useUrlState, useUrlSync } from "./hooks/useUrlState";
 
 export function MemoryWorkspace() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const { initialStep, scenarioId, setScenarioId, stepIndex, setStepIndex } = useUrlState();
+  const { canvasAreaRef, containerWidth, isPhone } = useMediaViewport();
 
-  const firstScenarioId = memoryEngineScenarios[0]?.id ?? "";
-  const urlScenarioId = searchParams.get("scenario");
-  const urlStep = parseInt(searchParams.get("step") ?? "", 10);
-  const initialScenarioId = memoryEngineScenarios.find((s) => s.id === urlScenarioId)?.id ?? firstScenarioId;
-  const initialStep = !isNaN(urlStep) && urlStep >= 0 ? urlStep : 0;
-
-  const [scenarioId, setScenarioId] = useState(initialScenarioId);
-  const [stepIndex, setStepIndex] = useState(initialStep);
   const [overlayState, setOverlayState] = useState<"visible" | "exiting" | "hidden">(
     initialStep === 0 ? "visible" : "hidden"
   );
-  const [isPlaying, setIsPlaying] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [playbackSpeed, setPlaybackSpeed] = useState<PlaybackSpeed>(0.5);
-  const [containerWidth, setContainerWidth] = useState(960);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<LearningTab>("code");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isPhone, setIsPhone] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const canvasAreaRef = useRef<HTMLDivElement | null>(null);
   const isInitialMountRef = useRef(true);
   const overlayDismissRef = useRef(false);
 
@@ -56,6 +41,12 @@ export function MemoryWorkspace() {
   const snapshots = useMemo(() => (scenario ? runMemoryProgram(scenario.commands) : []), [scenario]);
   const maxStep = Math.max(snapshots.length - 1, 0);
   const activeStepIndex = clampStep(stepIndex, maxStep);
+  const { isPlaying, playbackSpeed, setIsPlaying, setPlaybackSpeed } = usePlayback({
+    activeStepIndex,
+    maxStep,
+    setStepIndex,
+  });
+  useUrlSync(scenarioId, activeStepIndex);
   const activeSnapshot = snapshots[activeStepIndex];
   const explanations = activeSnapshot ? explainEvent(activeSnapshot) : [];
   const activeScene = useMemo(
@@ -95,7 +86,7 @@ export function MemoryWorkspace() {
     setSelectedId(null);
     setActiveTab("code");
     setIsSidebarOpen(false);
-  }, [scenarioId]);
+  }, [scenarioId, setIsPlaying, setStepIndex]);
 
   useEffect(() => {
     if (!isSidebarOpen) return;
@@ -105,33 +96,6 @@ export function MemoryWorkspace() {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [isSidebarOpen]);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    setIsPhone(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => setIsPhone(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const params = new URLSearchParams({ scenario: scenarioId, step: String(activeStepIndex) });
-      router.replace(`/?${params.toString()}`);
-    }, 150);
-    return () => clearTimeout(timer);
-  }, [scenarioId, activeStepIndex, router]);
-
-  useEffect(() => {
-    const el = canvasAreaRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width;
-      if (width && width > 0) setContainerWidth(Math.round(width));
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -158,24 +122,7 @@ export function MemoryWorkspace() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [maxStep, isFullscreen]);
-
-  useEffect(() => {
-    if (!isPlaying) {
-      return;
-    }
-
-    if (activeStepIndex >= maxStep) {
-      setIsPlaying(false);
-      return;
-    }
-
-    const interval = window.setInterval(() => {
-      setStepIndex((currentStep) => clampStep(currentStep + 1, maxStep));
-    }, getPlaybackIntervalMs(playbackSpeed));
-
-    return () => window.clearInterval(interval);
-  }, [activeStepIndex, isPlaying, maxStep, playbackSpeed]);
+  }, [maxStep, isFullscreen, setIsPlaying, setStepIndex]);
 
   const handleStepChange = (nextStep: number) => {
     setStepIndex(clampStep(nextStep, maxStep));

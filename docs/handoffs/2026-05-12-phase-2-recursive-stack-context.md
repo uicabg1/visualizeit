@@ -710,3 +710,15 @@ Fixture validator + throw→diagnostic. `runMemoryProgram` is now total — a ty
 - `memoryEngine.test.ts` +19 tests — `describe.each` over all 8 scenarios (validator zero-issues, engine total, **golden parity**: djb2 hash of full+final snapshot JSON pinned pre-refactor → byte-identical confirmed); bad-fixture test: no throw, snapshots returned, ≥3 INVALID_TARGET; validator flags deliberate bad fixture.
 
 Verify: 71/71 tests (`pnpm --config.verify-deps-before-run=false test` — pnpm pre-run install still trips ERR_PNPM_IGNORED_BUILDS, untracked `pnpm-workspace.yaml` placeholder untouched) · eslint clean · build OK. No UI touched — no browser smoke.
+
+## What Was Done (T-REFACTOR-4a) — 2026-09-28 — branch `refactor/t-refactor-4a`
+
+Extract workspace hooks — pure move, no logic rewrite. `MemoryWorkspace.tsx` 442 → 389 lines.
+
+- `components/memory/hooks/useUrlState.ts` (new) — `useUrlState()` = URL parse (`:24-31`) + `scenarioId`/`stepIndex` state; `useUrlSync(scenarioId, activeStepIndex)` = debounced `router.replace` effect (`:117-123`). Split into two hooks because clamped `activeStepIndex` depends on `maxStep` (derived after the hook call) — call order inverted without changing behavior.
+- `components/memory/hooks/usePlayback.ts` (new) — `isPlaying`/`playbackSpeed` state (`:38,40`) + auto-advance interval effect (`:163-178`); takes `{activeStepIndex, maxStep, setStepIndex}`; exports shared `clampStep` (was workspace-local `:20-21`).
+- `components/memory/hooks/useMediaViewport.ts` (new) — phone `matchMedia` effect (`:109-115`) + `containerWidth`/`canvasAreaRef` ResizeObserver (`:41,47,125-134`).
+- Workspace deps `[scenarioId]`/`[maxStep, isFullscreen]` widened with the (runtime-stable) setters — exhaustive-deps can't prove stability across hook boundaries; no behavior change.
+- Acceptance check: keyboard/playback/URL-sync logic byte-identical, just relocated.
+
+Verify: 71/71 tests · eslint 0 problems · build clean (`/` 15.7 kB, +0.3 from hook boundary) · Playwright smoke 10/10: deep-link `?scenario=buffer-overflow&step=4` restores + URL stable, space/pause toggle, welcome overlay at `/`, tablet drawer open+Esc at 820px, phone gate at 375px (no canvas).
