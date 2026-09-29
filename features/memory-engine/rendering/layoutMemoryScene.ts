@@ -1,6 +1,6 @@
 import type { MemoryDiagnostic } from "../domain/diagnostics";
 import type { MemorySnapshot, ReleasedStackFrame } from "../domain/snapshots";
-import type { MemoryValue, PointerStatus } from "../domain/types";
+import type { MemoryValue, PointerStatus, StackVariable } from "../domain/types";
 import type {
   DiagnosticBadgeNode,
   HeapBlockNode,
@@ -145,6 +145,96 @@ const selectionPriority = (selectable: MemorySceneSelectable): number => {
   }
 };
 
+type FrameLayoutSource = {
+  frameId: string;
+  functionName: string;
+  variables: StackVariable[];
+};
+
+type FrameLayoutOpts = {
+  layout: ResolvedLayoutOptions;
+  x: number;
+  width: number;
+};
+
+type FrameLayoutResult = {
+  node: StackFrameNode;
+  nextY: number;
+  pointerSources: PointerSourceNode[];
+  selectables: MemorySceneSelectable[];
+};
+
+const layoutFrame = (frame: FrameLayoutSource, y: number, opts: FrameLayoutOpts, isReleased: boolean): FrameLayoutResult => {
+  const { layout } = opts;
+  const framePointerSources: PointerSourceNode[] = [];
+  const frameSelectables: MemorySceneSelectable[] = [];
+  const frameHeight = layout.frameHeaderHeight + Math.max(frame.variables.length, 1) * layout.rowHeight + 16;
+  const frameRect = rect(opts.x, y, opts.width, frameHeight);
+  const headerRect = rect(frameRect.x, frameRect.y, frameRect.width, layout.frameHeaderHeight);
+  const variables: StackVariableNode[] = frame.variables.map((variable, index) => {
+    const variableRect = rect(
+      frameRect.x + 14,
+      frameRect.y + layout.frameHeaderHeight + 8 + index * layout.rowHeight,
+      frameRect.width - 28,
+      layout.rowHeight - 6
+    );
+    const pointerTarget = isReleased ? null : valuePointerTarget(variable.value);
+    const variableNode: StackVariableNode = {
+      id: `${isReleased ? "released-variable" : "stack-variable"}:${variable.id}`,
+      variableId: variable.id,
+      frameId: frame.frameId,
+      label: variable.name,
+      dataType: variable.dataType,
+      valueLabel: formatValue(variable.value),
+      rect: variableRect,
+      anchor: rightAnchor(variableRect),
+      pointerTargetBlockId: pointerTarget?.targetBlockId ?? null,
+      pointerStatus: pointerTarget?.status ?? null,
+      ...(isReleased ? { opacity: 0.3 } : {})
+    };
+
+    if (pointerTarget) {
+      framePointerSources.push({
+        id: variableNode.id,
+        targetBlockId: pointerTarget.targetBlockId,
+        status: pointerTarget.status,
+        addressLabel: pointerTarget.addressLabel,
+        anchor: variableNode.anchor
+      });
+      frameSelectables.push(variableSelectable(variableNode));
+    }
+
+    return variableNode;
+  });
+
+  const node: StackFrameNode = {
+    id: isReleased ? `released-frame:${frame.functionName}` : `stack-frame:${frame.frameId}`,
+    frameId: frame.frameId,
+    label: frame.functionName,
+    rect: frameRect,
+    headerRect,
+    variables,
+    ...(isReleased ? { opacity: 0.3, released: true } : {})
+  };
+
+  if (!isReleased) {
+    frameSelectables.push({
+      id: node.id,
+      kind: "stack-frame",
+      label: node.label,
+      detail: `${node.label} stack frame`,
+      rect: node.rect
+    });
+  }
+
+  return {
+    node,
+    nextY: y + frameHeight + layout.gap,
+    pointerSources: framePointerSources,
+    selectables: frameSelectables
+  };
+};
+
 export const layoutMemoryScene = (
   snapshot: MemorySnapshot,
   options?: LayoutMemorySceneOptions
@@ -169,102 +259,34 @@ export const layoutMemoryScene = (
 
   if (showStack) {
     for (const frame of snapshot.stackFrames) {
-      const frameHeight = layout.frameHeaderHeight + Math.max(frame.variables.length, 1) * layout.rowHeight + 16;
-      const frameRect = rect(effectiveStackX, nextStackY, effectiveStackWidth, frameHeight);
-      const headerRect = rect(frameRect.x, frameRect.y, frameRect.width, layout.frameHeaderHeight);
-      const variables: StackVariableNode[] = frame.variables.map((variable, index) => {
-        const variableRect = rect(
-          frameRect.x + 14,
-          frameRect.y + layout.frameHeaderHeight + 8 + index * layout.rowHeight,
-          frameRect.width - 28,
-          layout.rowHeight - 6
-        );
-        const pointerTarget = valuePointerTarget(variable.value);
-        const variableNode: StackVariableNode = {
-          id: `stack-variable:${variable.id}`,
-          variableId: variable.id,
-          frameId: frame.id,
-          label: variable.name,
-          dataType: variable.dataType,
-          valueLabel: formatValue(variable.value),
-          rect: variableRect,
-          anchor: rightAnchor(variableRect),
-          pointerTargetBlockId: pointerTarget.targetBlockId,
-          pointerStatus: pointerTarget.status
-        };
-
-        pointerSources.push({
-          id: variableNode.id,
-          targetBlockId: pointerTarget.targetBlockId,
-          status: pointerTarget.status,
-          addressLabel: pointerTarget.addressLabel,
-          anchor: variableNode.anchor
-        });
-        selectables.push(variableSelectable(variableNode));
-
-        return variableNode;
-      });
-
-      const frameNode: StackFrameNode = {
-        id: `stack-frame:${frame.id}`,
-        frameId: frame.id,
-        label: frame.functionName,
-        rect: frameRect,
-        headerRect,
-        variables
-      };
-
-      stackFrames.push(frameNode);
-      selectables.push({
-        id: frameNode.id,
-        kind: "stack-frame",
-        label: frameNode.label,
-        detail: `${frameNode.label} stack frame`,
-        rect: frameNode.rect
-      });
-      nextStackY += frameHeight + layout.gap;
+      const laid = layoutFrame(
+        { frameId: frame.id, functionName: frame.functionName, variables: frame.variables },
+        nextStackY,
+        { layout, x: effectiveStackX, width: effectiveStackWidth },
+        false
+      );
+      stackFrames.push(laid.node);
+      pointerSources.push(...laid.pointerSources);
+      selectables.push(...laid.selectables);
+      nextStackY = laid.nextY;
     }
   }
 
   // Released frames — ghost representation of the last popped frame
   const releasedFrames: StackFrameNode[] = showStack
     ? snapshot.releasedFrames.map((releasedFrame: ReleasedStackFrame) => {
-        const frameHeight =
-          layout.frameHeaderHeight + Math.max(releasedFrame.variables.length, 1) * layout.rowHeight + 16;
-        const frameRect = rect(effectiveStackX, nextStackY, effectiveStackWidth, frameHeight);
-        const headerRect = rect(frameRect.x, frameRect.y, frameRect.width, layout.frameHeaderHeight);
-        const variables: StackVariableNode[] = releasedFrame.variables.map((variable, index) => {
-          const variableRect = rect(
-            frameRect.x + 14,
-            frameRect.y + layout.frameHeaderHeight + 8 + index * layout.rowHeight,
-            frameRect.width - 28,
-            layout.rowHeight - 6
-          );
-          return {
-            id: `released-variable:${variable.id}`,
-            variableId: variable.id,
+        const laid = layoutFrame(
+          {
             frameId: `released-${releasedFrame.functionName}`,
-            label: variable.name,
-            dataType: variable.dataType,
-            valueLabel: formatValue(variable.value),
-            rect: variableRect,
-            anchor: rightAnchor(variableRect),
-            pointerTargetBlockId: null,
-            pointerStatus: null,
-            opacity: 0.3
-          };
-        });
-        nextStackY += frameHeight + layout.gap;
-        return {
-          id: `released-frame:${releasedFrame.functionName}`,
-          frameId: `released-${releasedFrame.functionName}`,
-          label: releasedFrame.functionName,
-          rect: frameRect,
-          headerRect,
-          variables,
-          opacity: 0.3,
-          released: true
-        };
+            functionName: releasedFrame.functionName,
+            variables: releasedFrame.variables
+          },
+          nextStackY,
+          { layout, x: effectiveStackX, width: effectiveStackWidth },
+          true
+        );
+        nextStackY = laid.nextY;
+        return laid.node;
       })
     : [];
 
