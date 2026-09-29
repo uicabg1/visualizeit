@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { memoryEngineScenarios } from "@/features/memory-engine/simulation/fixtures";
+import { BrandMark } from "@/components/BrandMark";
 
 export function PhoneGate() {
   const [copied, setCopied] = useState(false);
@@ -17,17 +18,7 @@ export function PhoneGate() {
   return (
     <div className="phone-gate" role="main" aria-label="Open on a wider device">
       <div className="phone-gate__bg">
-        <svg
-          viewBox="0 0 32 32"
-          width="52"
-          height="52"
-          className="phone-gate__logo"
-          aria-hidden="true"
-        >
-          <rect x="2" y="2" width="28" height="28" rx="6" fill="#F5B82E"/>
-          <path d="M9 9 L16 23 L23 9" stroke="#0B0D10" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-          <rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="rgba(124,92,255,0.35)" strokeWidth="1"/>
-        </svg>
+        <BrandMark size={52} className="phone-gate__logo"/>
 
         <h1 className="phone-gate__headline">
           <span className="phone-gate__line1">Stack frames + pointers</span>

@@ -15,6 +15,7 @@ import { ScenarioSidebar } from "./ScenarioSidebar";
 import { StepBanner } from "./StepBanner";
 import { WelcomeOverlay } from "./WelcomeOverlay";
 import { WorkspaceToolbar } from "./WorkspaceToolbar";
+import { BrandMark } from "@/components/BrandMark";
 import { clampStep, usePlayback } from "./hooks/usePlayback";
 import { useMediaViewport } from "./hooks/useMediaViewport";
 import { useUrlState, useUrlSync } from "./hooks/useUrlState";
@@ -167,11 +168,7 @@ export function MemoryWorkspace() {
               </svg>
             </button>
             <span className="memory-workspace__logo" aria-hidden="true">
-              <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
-                <rect x="2" y="2" width="28" height="28" rx="6" fill="#F5B82E"/>
-                <path d="M9 9 L16 23 L23 9" stroke="#0B0D10" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                <rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="rgba(124,92,255,0.35)" strokeWidth="1"/>
-              </svg>
+              <BrandMark size={22}/>
             </span>
             <span className="memory-workspace__brand-name">VisualizeIT</span>
             <span className="memory-workspace__brand-chip">Memory Engine</span>
