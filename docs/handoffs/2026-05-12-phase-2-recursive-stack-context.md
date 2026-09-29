@@ -743,3 +743,12 @@ BrandMark component — logo SVG deduped 4× → 1.
 - Acceptance: `grep -rn "F5B82E" components app` → 0 hits in TS/TSX (only token definition in `globals.css:56` remains).
 - Verify: 71 tests green · eslint clean · build clean (Static) · Playwright smoke: navbar/welcome/phone/about logos render, console clean.
 - Env note: untracked `pnpm-workspace.yaml` has placeholder `allowBuilds` values → `pnpm test` fails deps-check; ran with `--config.verify-deps-before-run=false`. Needs user fix (approve-builds or delete file).
+
+## What Was Done (T-REFACTOR-6) — 2026-09-28 — branch `refactor/t-refactor-6`
+
+layoutFrame extraction — killed ~55-line live-loop vs released-ghost-map duplication in `layoutMemoryScene.ts`.
+
+- New module-level `layoutFrame(frame, y, opts, isReleased): {node, nextY, pointerSources, selectables}` (after `selectionPriority`); live loop (old `:171-227`) + ghost map (old `:231-269`) now call it. Live keeps pointer targets + variable/frame selectables; released → null pointers + trailing `opacity:0.3`/`released:true` via conditional spreads (key presence/order identical). `StackVariable` type import added. 461 → 483 lines but frame geometry exists once — T-CONTENT-4/7 static/rodata lanes call `layoutFrame` instead of copying a third time.
+- Behavior identity proven pre-merge: temporary golden harness — 8 scenarios × all snapshots × 3 region variants (default / heap-hidden / stack-hidden) `toEqual` pre-refactor JSON (~800 KB) → pass; temp test + golden file deleted after verify.
+- Verify: vitest 71 green · eslint `app components features` 0 problems · `next build` clean (/ = 15.9 kB). UI untouched (proven identical output) → no Playwright smoke.
+- Env fixed: untracked `pnpm-workspace.yaml` `allowBuilds` placeholders → `false` (puppeteer/sharp/unrs-resolver; no install scripts run) → `pnpm test`/`pnpm build` deps-check green again. File still untracked — user call: keep, commit, or delete.
