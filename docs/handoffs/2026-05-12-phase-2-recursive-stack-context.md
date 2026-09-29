@@ -733,3 +733,13 @@ Extract toolbar + welcome overlay. `MemoryWorkspace.tsx` 389 → 269 lines; zero
 - Workspace drops `Link` import + `copied` state; JSX floor reached — remaining lines are orchestrator state/effects (4a scope).
 
 Verify: vitest 71 green · eslint `app components features` 0 problems · `next build` clean (/ = 15.6 kB). Playwright smoke 18/18 GREEN (prod start): overlay visible→dismiss, Focus toggle + Esc, Share→Copied!→reset + clipboard URL, deep-link restore, tablet drawer, phone gate. Note: `pnpm exec` trips on `ERR_PNPM_IGNORED_BUILDS` (untracked `pnpm-workspace.yaml` has placeholder `allowBuilds` entries — env, pre-existing); used `./node_modules/.bin/*` directly.
+
+## What Was Done (T-REFACTOR-5) — 2026-09-28 — branch `refactor/t-refactor-5`
+
+BrandMark component — logo SVG deduped 4× → 1.
+
+- `components/BrandMark.tsx` (new) — `size` + `className` props; amber fill now `var(--accent-amber)` (token was hardcoded `#F5B82E` at every use site); ink path + violet border literals kept 1:1 (0.35 alpha ≠ `--accent-violet-border` 0.4 — visual parity preserved).
+- Swaps: `MemoryWorkspace.tsx` navbar logo 22px, `WelcomeOverlay.tsx` 60px ×2 panels (split-wipe design kept), `PhoneGate.tsx` 52px, `app/about/page.tsx` 20px. `app/icon.svg` untouched (static asset).
+- Acceptance: `grep -rn "F5B82E" components app` → 0 hits in TS/TSX (only token definition in `globals.css:56` remains).
+- Verify: 71 tests green · eslint clean · build clean (Static) · Playwright smoke: navbar/welcome/phone/about logos render, console clean.
+- Env note: untracked `pnpm-workspace.yaml` has placeholder `allowBuilds` values → `pnpm test` fails deps-check; ran with `--config.verify-deps-before-run=false`. Needs user fix (approve-builds or delete file).
