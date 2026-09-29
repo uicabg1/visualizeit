@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BrandMark } from "@/components/BrandMark";
 
 import { memoryEngineScenarios, type MemoryScenarioCategory } from "@/features/memory-engine/simulation/fixtures";
 
@@ -33,11 +34,7 @@ export default function AboutPage() {
       <nav className="about-nav" aria-label="VisualizeIT navigation">
         <div className="about-nav__inner">
           <Link href="/" className="about-nav__brand">
-            <svg viewBox="0 0 32 32" width="20" height="20" aria-hidden="true">
-              <rect x="2" y="2" width="28" height="28" rx="6" fill="#F5B82E"/>
-              <path d="M9 9 L16 23 L23 9" stroke="#0B0D10" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-              <rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="rgba(124,92,255,0.35)" strokeWidth="1"/>
-            </svg>
+            <BrandMark size={20}/>
             <span className="about-nav__brand-name">VisualizeIT</span>
           </Link>
 

@@ -1,6 +1,6 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅; T5 next, then T6/T7 P1). One task = one branch, token-saving rules
+**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅ T5 ✅; T6 next, then T7 P1). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
 **Tests:** 71 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
@@ -79,7 +79,7 @@ Approved 2026-09-28 after full-project review. Goal: make "add new scenario" saf
 - **Fix:** after 4a. `components/memory/WorkspaceToolbar.tsx` (`:251-336` Focus/Share/About + copied state, inline styles → globals.css classes) + `components/memory/WelcomeOverlay.tsx` (overlayBg/renderWelcomeOverlay as-is, dedupe `:438-439`). Files: 4 (2 new + workspace + globals.css).
 - **Acceptance:** workspace <200 lines; zero `style={{` in components/; smoke: fullscreen/share/drawer/welcome unchanged behavior.
 
-### T-REFACTOR-5 — BrandMark component · **P1**
+### ~~T-REFACTOR-5 — BrandMark component~~ · **DONE 2026-09-28** (`refactor/t-refactor-5`) — see handoff "What Was Done (T-REFACTOR-5)" · **P1**
 
 - **Problem:** logo SVG duplicated 4× + icon: `MemoryWorkspace.tsx:224-227`, `:410-414` (in overlay too — 5 instances), `PhoneGate.tsx:25`, `app/about/page.tsx:81`, `app/icon.svg`. Hex `#F5B82E` hardcoded (token exists: `--accent-amber`, `globals.css:56`).
 - **Fix:** `components/BrandMark.tsx` (size prop, `currentColor`/var-based fills), swap all TSX uses. Leave `app/icon.svg` (static asset).
