@@ -1,6 +1,6 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅ T5 ✅; T6 next, then T7 P1). One task = one branch, token-saving rules
+**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅ T5 ✅ T6 ✅; T7 next, then T8 P2). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
 **Tests:** 71 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
@@ -85,7 +85,7 @@ Approved 2026-09-28 after full-project review. Goal: make "add new scenario" saf
 - **Fix:** `components/BrandMark.tsx` (size prop, `currentColor`/var-based fills), swap all TSX uses. Leave `app/icon.svg` (static asset).
 - **Acceptance:** `grep -rn "F5B82E" components app` = 0 hits; visual smoke unchanged.
 
-### T-REFACTOR-6 — layoutFrame extraction · **P1**
+### ~~T-REFACTOR-6 — layoutFrame extraction~~ · **DONE 2026-09-28** (`refactor/t-refactor-6`) — see handoff "What Was Done (T-REFACTOR-6)" · **P1**
 
 - **Problem:** `layoutMemoryScene.ts:171-227` (live frames) and `:231-269` (released ghosts) ~55 duplicated lines. New region lanes (T-CONTENT-4/7 static/rodata) would copy a third time.
 - **Fix:** extract shared `layoutFrame(frame, y, opts, isReleased)` returning `{node, nextY, pointerSources, selectables}`. Output identical — assert via scene snapshots on 3 region scenarios (`stack-frame-basics`, `recursive-stack`, buffer-overflow ghosts).
