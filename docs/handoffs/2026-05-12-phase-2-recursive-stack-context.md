@@ -752,3 +752,13 @@ layoutFrame extraction — killed ~55-line live-loop vs released-ghost-map dupli
 - Behavior identity proven pre-merge: temporary golden harness — 8 scenarios × all snapshots × 3 region variants (default / heap-hidden / stack-hidden) `toEqual` pre-refactor JSON (~800 KB) → pass; temp test + golden file deleted after verify.
 - Verify: vitest 71 green · eslint `app components features` 0 problems · `next build` clean (/ = 15.9 kB). UI untouched (proven identical output) → no Playwright smoke.
 - Env fixed: untracked `pnpm-workspace.yaml` `allowBuilds` placeholders → `false` (puppeteer/sharp/unrs-resolver; no install scripts run) → `pnpm test`/`pnpm build` deps-check green again. File still untracked — user call: keep, commit, or delete.
+
+## What Was Done (T-REFACTOR-7) — 2026-10-03 — branch `refactor/t-refactor-7`
+
+tweenRenderModel complete contract — optional-field landmine defused.
+
+- `rendering/interpolateScene.ts` `tweenRenderModel` (`:217`) — return now `{ ...next, <4 tweened arrays> }`: ALL non-tweenable fields (bounds, selectables, `stackLane`, `heapLane`, `releasedFrames`, any future optional field) pass through from `next`; contract pinned in comment. Output parity: `bounds`/`selectables` came from `next` before too — identical.
+- `MemoryCanvas.tsx:75` — manual re-injection patch `{...tweened, stackLane: scene.stackLane, heapLane: scene.heapLane, releasedFrames: scene.releasedFrames}` deleted → `paint(tweened)`. t=1 direct-paint path untouched.
+- `interpolateScene.test.ts` — new describe `tweenRenderModel — non-tweenable field passthrough (T-REFACTOR-7)`: lanes + released ghosts present at t=0.5; passthrough holds at t=0/t=1. 11 → 13 tests.
+- Verify: scoped vitest 13 green → `pnpm test` 73 green (5 files) · eslint `app components features` 0 problems · `pnpm build` clean (/ = 15.8 kB). Playwright smoke (dev): deep-link recursive-stack, 4 step-throughs w/ canvas pixel probes mid-tween (non-blank at each `t<1` frame incl. ghost-release zone 7→12/12), step sync, console 0 errors.
+- Next: T-REFACTOR-8 (P2, dead code prune).

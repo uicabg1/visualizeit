@@ -217,12 +217,14 @@ const tweenBadges = (
 export const tweenRenderModel = (prev: MemoryScene, next: MemoryScene, t: number): MemoryScene => {
   const eased = easeInOutCubic(t);
 
+  // Complete contract: non-tweenable fields (bounds, selectables, lanes,
+  // releasedFrames, any future optional fields) pass through from next.
+  // Only the 4 node arrays are interpolated.
   return {
-    bounds: next.bounds,
+    ...next,
     stackFrames: tweenFrames(prev.stackFrames, next.stackFrames, eased),
     heapBlocks: tweenBlocks(prev.heapBlocks, next.heapBlocks, eased),
     pointerEdges: tweenEdges(prev.pointerEdges, next.pointerEdges, eased),
     diagnosticBadges: tweenBadges(prev.diagnosticBadges, next.diagnosticBadges, eased),
-    selectables: next.selectables,
   };
 };
