@@ -805,3 +805,14 @@ Golden parity vectors — WASM harness groundwork. Pure test, zero product risk.
 - Files touched: 1 (memoryEngine.test.ts, +35 lines). Append via cavecrew-builder; hash-fill + it.each signature fix inline.
 - Verify: scoped vitest 44/44 · `pnpm test` 86 green (+9: 8 hash vectors + 1 round-trip) · eslint 0 problems · `pnpm build` clean. No UI touched → no Playwright.
 - Next: T-REFACTOR-12 (P3, allocator model — Phase 3 gate, needs explicit approval).
+
+## What Was Done (T-UX-2) — 2026-10-03 — branch `feature/t-ux-2`
+
+Canvas zoom in/out — first task outside the (now-complete, minus gated T-REFACTOR-12) Refactor Queue; picked via fallback chain P0 done (T17a/b) → first open P1.
+
+- New `features/memory-engine/rendering/zoom.ts`: `MIN_ZOOM 0.5` / `MAX_ZOOM 2` / `ZOOM_STEP 0.1`, `clampZoom` (1-decimal round → no float drift), `zoomByWheel`, `maxAreaScale` + `MAX_CANVAS_AREA_PX = 16M` (iOS Safari blank-canvas guard: bitmap area capped, dpr component sacrificed before zoom). `zoom.test.ts`: 4 cases.
+- `MemoryCanvas.tsx`: `zoom`/`onZoomChange` props. Zoom applied in `paint`: bitmap = bounds×dpr×z clamped by area cap, CSS box = bounds×z, `setTransform(scale)`. Hit-test untouched — `getBoundingClientRect` ratio math is zoom-invariant (backlog's "verify" → confirmed by reviewer + smoke). Zoom read via `zoomRef` (NOT effect deps) → wheel/dblclick never restart mid-flight tweens; `idlePaintRef` repaints only when idle. Wheel: native listener `passive:false` on canvas (React root wheel listener is passive → `onWheel` JSX cannot `preventDefault`), ctrl/cmd-only, ref updated synchronously per event → no dropped deltas. Dblclick → reset 1×.
+- `MemoryWorkspace.tsx`: `zoom` state + `.memory-canvas-zoombar` row (−/reset-%/+) above shell inside canvas-area; buttons disabled at limits. `globals.css`: zoombar styles (existing tokens only); `.memory-canvas-shell` grid-centering moved to new `.memory-canvas-viewport` wrapper (min-100% grid) because `place-items:center` + `overflow:auto` makes scroll-start unreachable — wrapper grows to zoomed content → overflow stays scrollable from origin.
+- Files: 5 (2 new + 3 edit) — within guard. Reviewer follow-ups skipped (scope): trackpad pinch proportional deltaY step; multiplicative zoom curve.
+- Verify: zoom.test 4/4 · `pnpm test` 90 green (+4) · eslint 0 · `pnpm build` clean · Playwright smoke 1280×900: +→120% CSS width ×1.2 asserted, ctrl+wheel→110%, dblclick→100%, clamp 50/200% with disabled btns, step-nav while zoomed, 0 console errors. Screenshots `tmp-screenshots/zoom-120.png`, `zoom-step-110.png`. Not deployed.
+- Next: T-REFACTOR-12 (P3, allocator model — needs explicit approval) or next P1 (T-UX-3 may already be covered by `interpolateScene` — audit before picking; then T-CONTENT-2).
