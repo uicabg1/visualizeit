@@ -1,8 +1,8 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-09-28 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅ T5 ✅ T6 ✅; T7 next, then T8 P2). One task = one branch, token-saving rules
+**Last updated:** 2026-10-03 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅ T5 ✅ T6 ✅ T7 ✅; T8 next, then T9–11 P2, T12 P3). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
-**Tests:** 71 green · `pnpm test`
+**Tests:** 73 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
 
 ---
@@ -91,7 +91,7 @@ Approved 2026-09-28 after full-project review. Goal: make "add new scenario" saf
 - **Fix:** extract shared `layoutFrame(frame, y, opts, isReleased)` returning `{node, nextY, pointerSources, selectables}`. Output identical — assert via scene snapshots on 3 region scenarios (`stack-frame-basics`, `recursive-stack`, buffer-overflow ghosts).
 - **Acceptance:** `layoutMemoryScene.test.ts` green + `deepEqual` check old vs new output before merge.
 
-### T-REFACTOR-7 — tweenRenderModel complete contract · **P1**
+### ~~T-REFACTOR-7 — tweenRenderModel complete contract~~ · **DONE 2026-10-03** (`refactor/t-refactor-7`) — see handoff "What Was Done (T-REFACTOR-7)" · **P1**
 
 - **Problem:** tween loses optional fields; consumer patches manually at `MemoryCanvas.tsx:75` (`{...tweened, stackLane, heapLane, releasedFrames}` — documented "critical fix"). Any future optional field = new landmine.
 - **Fix:** `tweenRenderModel` (rendering/interpolateScene.ts) passes through all non-tweenable fields itself; delete patch in canvas. Keep t=1 direct-paint path.

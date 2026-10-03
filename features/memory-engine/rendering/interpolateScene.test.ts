@@ -103,3 +103,41 @@ describe("tweenRenderModel", () => {
     expect(tween.bounds).toEqual({ width: 960, height: 640 });
   });
 });
+
+describe("tweenRenderModel — non-tweenable field passthrough (T-REFACTOR-7)", () => {
+  const ghost = {
+    id: "stack-frame:leaf",
+    frameId: "leaf",
+    label: "leaf",
+    rect: makeRect(48, 30),
+    headerRect: makeRect(48, 30, 360, 36),
+    variables: [],
+  };
+  const stackLane = { rect: makeRect(16, 16, 420, 480), label: "STACK" };
+  const heapLane = { rect: makeRect(460, 16, 480, 480), label: "HEAP" };
+
+  it("lanes and released ghost frames present at t=0.5", () => {
+    const prev = makeScene([makeFrame("main", 56)]);
+    const next: MemoryScene = {
+      ...makeScene([makeFrame("main", 120)]),
+      stackLane,
+      heapLane,
+      releasedFrames: [ghost],
+    };
+    const tween = tweenRenderModel(prev, next, 0.5);
+    expect(tween.stackLane).toEqual(stackLane);
+    expect(tween.heapLane).toEqual(heapLane);
+    expect(tween.releasedFrames).toEqual([ghost]);
+  });
+
+  it("optional fields pass through unchanged at t=0 and t=1", () => {
+    const prev = makeScene([makeFrame("main", 56)]);
+    const next: MemoryScene = {
+      ...makeScene([makeFrame("main", 120)]),
+      stackLane,
+      releasedFrames: [ghost],
+    };
+    expect(tweenRenderModel(prev, next, 0).stackLane).toEqual(stackLane);
+    expect(tweenRenderModel(prev, next, 1).releasedFrames).toEqual([ghost]);
+  });
+});

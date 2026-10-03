@@ -72,7 +72,7 @@ export function MemoryCanvas({ scene, selectedId, onSelect, stepIndex, playbackS
       const t = Math.min((now - startTime) / transitionMs, 1);
       if (t < 1) {
         const tweened = tweenRenderModel(capturedPrev, scene, t);
-        paint({ ...tweened, stackLane: scene.stackLane, heapLane: scene.heapLane, releasedFrames: scene.releasedFrames });
+        paint(tweened);
         rafRef.current = requestAnimationFrame(animate);
       } else {
         paint(scene);
