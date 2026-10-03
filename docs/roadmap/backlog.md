@@ -1,8 +1,8 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-10-03 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅ T5 ✅ T6 ✅ T7 ✅ T8 ✅ T9 ✅; T10 next, then T11 P2, T12 P3). One task = one branch, token-saving rules
+**Last updated:** 2026-10-03 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅ T5 ✅ T6 ✅ T7 ✅ T8 ✅ T9 ✅ T10 ✅; T11 next, then T12 P3). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
-**Tests:** 73 green · `pnpm test`
+**Tests:** 77 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
 
 ---
@@ -107,7 +107,7 @@ Approved 2026-09-28 after full-project review. Goal: make "add new scenario" saf
 - **Fix:** skip replace when derived params equal current URL (compare against `window.location.search` inside the debounce).
 - **Acceptance:** load `/` → URL stays `/`; deep link `?scenario=buffer-overflow&step=4` still restores + updates on step.
 
-### T-REFACTOR-10 — MemoryRef target model · **P2 · schema freeze for WASM**
+### ~~T-REFACTOR-10 — MemoryRef target model~~ · **DONE 2026-10-03** (`refactor/t-refactor-10`) — see handoff "What Was Done (T-REFACTOR-10)" · **P2 · schema freeze for WASM**
 
 - **Problem:** `ValueTarget` = `variable | heapField` only (`domain/types.ts:27-36`); `PointerValue.targetBlockId` points only to heap blocks (`:18-23`). Blocks T-CONTENT-2 (stack arrays) + T-CONTENT-3 (`**pp` → pointer to stack variable).
 - **Fix:** generalize `ValueTarget` → add `{kind:"stackSlot", frameHint?, name, index?}`; `PointerValue` add optional `targetVariable?: {frameId, name}` (pointer-to-stack). Engine: resolver fn per union member (switch already centralized in read/writeTarget). Layout/draw/pedagogy: handle new variants minimally (render pointer edge to frame row).

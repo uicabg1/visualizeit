@@ -783,3 +783,14 @@ URL sync first-mount guard — clean `/` no longer rewritten to `/?scenario=...&
 - Files touched: 1 (+2 docs). Edit via cavecrew-builder, anchors + snippet inline. No test file for hook → no scoped vitest target.
 - Verify: `pnpm test` 73 green · eslint `app components features` 0 problems · `pnpm build` clean.
 - Next: T-REFACTOR-10 (P2, MemoryRef target model — schema freeze for WASM).
+
+## What Was Done (T-REFACTOR-10) — 2026-10-03 — branch `refactor/t-refactor-10`
+
+MemoryRef target model — snapshot/target schema frozen for WASM parity (Phase 3 gate).
+
+- `domain/types.ts`: `ValueTarget` += `{kind:"stackSlot", frameHint?, name, index?}`; `PointerValue` += optional `targetVariable?: {frameId, name}` (pointer-to-stack, `**pp`). Additive/optional-only → all 8 shipped snapshots byte-identical (verified: `GOLDEN_SNAPSHOT_HASHES` unchanged, green).
+- `simulation/memoryEngine.ts`: `findStackSlot` resolver (reverse frame scan, frameHint = frame id or functionName) at `:92`; readTarget/writeTarget stackSlot branches; `normalizeValue` preserves `targetVariable` (status `valid`); ASSIGN_POINTER with `{kind:"target", target:{kind:"stackSlot"}}` emits pointer-to-stack. Pinned semantics (commented): `index` reserved for T-CONTENT-2 stack arrays — `index > 0` → INVALID_TARGET, slot 0/undefined = scalar slot; engine stays total.
+- `domain/commands.ts` describeTarget +stackSlot; `validateScenario.ts` checkTarget treats stackSlot like variable. pedagogy covered via describeTarget; layout/draw untouched (targetBlockId-null already skips pointer edge) — pointer-edge-to-frame-row lands with T-CONTENT-3 UI.
+- Files touched: 5 (types, commands, memoryEngine, validateScenario, memoryEngine.test). Edits via cavecrew-builder, snippets + anchors inline.
+- Verify: scoped vitest 35/35 · `pnpm test` 77 green (+4: stackSlot round-trip, `**pp` targetVariable + JSON round-trip, frameHint recursion, INVALID_TARGET totals) · eslint 0 problems · `pnpm build` clean (route `/` 16.2 kB). No UI touched → no Playwright.
+- Next: T-REFACTOR-11 (P2, golden parity vectors — pure test).

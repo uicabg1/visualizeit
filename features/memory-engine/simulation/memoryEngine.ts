@@ -1,6 +1,6 @@
 import { describeCommand, describeTarget, type MemoryCommand } from "../domain/commands";
 import { createDiagnostic, type MemoryDiagnostic } from "../domain/diagnostics";
-import type { HeapBlock, MemoryAddress, MemoryValue, StackFrame, StructField, ValueTarget } from "../domain/types";
+import type { HeapBlock, MemoryAddress, MemoryValue, StackFrame, StackVariable, StructField, ValueTarget } from "../domain/types";
 import type { MemorySnapshot, ReleasedStackFrame } from "../domain/snapshots";
 
 type MutableState = {
@@ -38,6 +38,16 @@ const normalizeValue = (value: MemoryValue, heapBlocks: HeapBlock[]): MemoryValu
   }
 
   if (value.targetBlockId === null) {
+    if (value.targetVariable) {
+      return {
+        kind: "pointer",
+        targetBlockId: null,
+        address: null,
+        status: "valid",
+        targetVariable: { ...value.targetVariable }
+      };
+    }
+
     return {
       kind: "pointer",
       targetBlockId: null,
@@ -79,6 +89,39 @@ const normalizeBlocks = (blocks: HeapBlock[]): HeapBlock[] =>
 
 const currentFrame = (state: MutableState): StackFrame | null => state.stackFrames.at(-1) ?? null;
 
+const findStackSlot = (
+  state: MutableState,
+  slot: { frameHint?: string; name: string }
+): { frame: StackFrame; variable: StackVariable } | null => {
+  for (const frame of [...state.stackFrames].reverse()) {
+    if (slot.frameHint !== undefined && frame.id !== slot.frameHint && frame.functionName !== slot.frameHint) {
+      continue;
+    }
+
+    const variable = frame.variables.find((candidate) => candidate.name === slot.name);
+
+    if (variable) {
+      return { frame, variable };
+    }
+  }
+
+  return null;
+};
+
+const stackSlotWriteBlocked = (state: MutableState, target: { index?: number; name: string; kind: string }): boolean => {
+  if (target.index === undefined || target.index === 0) {
+    return false;
+  }
+
+  addEventDiagnostic(
+    state,
+    createDiagnostic("INVALID_TARGET", "error", "Stack arrays are not modelled yet; only slot 0 of a scalar stack variable is addressable.", {
+      label: target.name
+    })
+  );
+  return true;
+};
+
 const defaultValueFor = (dataType: string): MemoryValue => {
   if (dataType.includes("*")) {
     return nullPointer();
@@ -104,6 +147,26 @@ const readTarget = (state: MutableState, target: ValueTarget): MemoryValue => {
       })
     );
     return { kind: "null" };
+  }
+
+  if (target.kind === "stackSlot") {
+    if (stackSlotWriteBlocked(state, target)) {
+      return { kind: "null" };
+    }
+
+    const slot = findStackSlot(state, target);
+
+    if (!slot) {
+      addEventDiagnostic(
+        state,
+        createDiagnostic("INVALID_TARGET", "error", `Unknown stack slot target: ${describeTarget(target)}.`, {
+          label: target.name
+        })
+      );
+      return { kind: "null" };
+    }
+
+    return slot.variable.value;
   }
 
   const block = state.heapBlocks.find((candidate) => candidate.id === target.blockId);
@@ -140,6 +203,27 @@ const writeTarget = (state: MutableState, target: ValueTarget, value: MemoryValu
         label: target.name
       })
     );
+    return;
+  }
+
+  if (target.kind === "stackSlot") {
+    if (stackSlotWriteBlocked(state, target)) {
+      return;
+    }
+
+    const slot = findStackSlot(state, target);
+
+    if (!slot) {
+      addEventDiagnostic(
+        state,
+        createDiagnostic("INVALID_TARGET", "error", `Unknown stack slot target: ${describeTarget(target)}.`, {
+          label: target.name
+        })
+      );
+      return;
+    }
+
+    slot.variable.value = value;
     return;
   }
 
@@ -247,6 +331,29 @@ const applyCommand = (state: MutableState, command: MemoryCommand, stepIndex: nu
           targetBlockId: source.blockId,
           address: block?.address ?? null,
           status: block?.allocated ? "valid" : "dangling"
+        });
+        return;
+      }
+
+      if (source.kind === "target" && source.target.kind === "stackSlot") {
+        const slot = findStackSlot(state, source.target);
+
+        if (!slot) {
+          addEventDiagnostic(
+            state,
+            createDiagnostic("INVALID_TARGET", "error", `Unknown stack slot target: ${describeTarget(source.target)}.`, {
+              label: source.target.name
+            })
+          );
+          return;
+        }
+
+        writeTarget(state, command.target, {
+          kind: "pointer",
+          targetBlockId: null,
+          address: null,
+          status: "valid",
+          targetVariable: { frameId: slot.frame.id, name: slot.variable.name }
         });
         return;
       }

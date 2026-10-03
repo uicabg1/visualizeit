@@ -23,7 +23,7 @@ const checkBlock = (ctx: MutableFrames, blockId: string, step: number): void => 
 };
 
 const checkTarget = (ctx: MutableFrames, target: ValueTarget, step: number): void => {
-  if (target.kind === "variable") {
+  if (target.kind === "variable" || target.kind === "stackSlot") {
     if (!ctx.frames.some((frame) => frame.has(target.name))) {
       ctx.issues.push(`step ${step}: references undeclared variable "${target.name}"`);
     }

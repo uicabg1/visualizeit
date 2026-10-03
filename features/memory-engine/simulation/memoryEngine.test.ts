@@ -383,3 +383,77 @@ describe("scenario fixture validation (T-REFACTOR-2)", () => {
   });
 });
 
+describe("MemoryRef target model (T-REFACTOR-10)", () => {
+  it("reads and writes stackSlot targets through the variable resolver", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main" },
+      { type: "DECLARE_VARIABLE", name: "p", dataType: "int *" },
+      { type: "MALLOC", target: { kind: "stackSlot", name: "p" }, size: 8, label: "int" },
+      { type: "READ_VALUE", source: { kind: "stackSlot", name: "p" } }
+    ];
+
+    const snapshots = runMemoryProgram(commands);
+    expect(getFinalSnapshot(snapshots).diagnostics).toHaveLength(0);
+    expect(snapshots[3]?.stackFrames[0]?.variables[0]?.value).toMatchObject({ kind: "pointer", status: "valid" });
+  });
+
+  it("pointer-to-stack: ASSIGN_POINTER from stackSlot source emits targetVariable", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main" },
+      { type: "DECLARE_VARIABLE", name: "p", dataType: "int *" },
+      { type: "DECLARE_VARIABLE", name: "pp", dataType: "int **" },
+      {
+        type: "ASSIGN_POINTER",
+        target: { kind: "variable", name: "pp" },
+        source: { kind: "target", target: { kind: "stackSlot", name: "p" } }
+      }
+    ];
+
+    const final = getFinalSnapshot(runMemoryProgram(commands));
+    expect(final.diagnostics).toHaveLength(0);
+    const pp = final.stackFrames[0]?.variables.find((variable) => variable.name === "pp");
+    expect(pp?.value).toMatchObject({
+      kind: "pointer",
+      targetBlockId: null,
+      status: "valid",
+      targetVariable: { frameId: "frame-1", name: "p" }
+    });
+    expect(JSON.parse(JSON.stringify(pp?.value))).toMatchObject({ targetVariable: { frameId: "frame-1", name: "p" } });
+  });
+
+  it("frameHint disambiguates recursive frames", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main" },
+      { type: "DECLARE_VARIABLE", name: "x", dataType: "int *" },
+      { type: "ENTER_FUNCTION", functionName: "helper" },
+      { type: "DECLARE_VARIABLE", name: "x", dataType: "int *" },
+      { type: "MALLOC", target: { kind: "stackSlot", name: "x", frameHint: "main" }, size: 8, label: "int" }
+    ];
+
+    const final = getFinalSnapshot(runMemoryProgram(commands));
+    expect(final.diagnostics).toHaveLength(0);
+    const mainFrame = final.stackFrames.find((frame) => frame.functionName === "main");
+    expect(mainFrame?.variables[0]?.value).toMatchObject({ kind: "pointer", status: "valid" });
+    expect(final.stackFrames.at(-1)?.variables[0]?.value).toMatchObject({ kind: "pointer", targetBlockId: null, status: "null" });
+  });
+
+  it("unknown stackSlot and array index > 0 degrade to INVALID_TARGET, engine stays total", () => {
+    expect(diagnosticTypes([
+      { type: "ENTER_FUNCTION", functionName: "main" },
+      { type: "READ_VALUE", source: { kind: "stackSlot", name: "ghost" } }
+    ])).toContain("INVALID_TARGET");
+
+    expect(diagnosticTypes([
+      { type: "ENTER_FUNCTION", functionName: "main" },
+      { type: "DECLARE_VARIABLE", name: "arr", dataType: "int" },
+      { type: "READ_VALUE", source: { kind: "stackSlot", name: "arr", index: 3 } }
+    ])).toContain("INVALID_TARGET");
+
+    expect(diagnosticTypes([
+      { type: "ENTER_FUNCTION", functionName: "main" },
+      { type: "DECLARE_VARIABLE", name: "arr", dataType: "int" },
+      { type: "ASSIGN_POINTER", target: { kind: "stackSlot", name: "arr", index: 2 }, source: { kind: "null" } }
+    ])).toContain("INVALID_TARGET");
+  });
+});
+
