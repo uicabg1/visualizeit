@@ -15,12 +15,13 @@ type MemoryCanvasProps = {
   selectedId: string | null;
   onSelect: (selected: MemorySceneSelectable | null) => void;
   stepIndex?: number;
+  instant?: boolean;
   playbackSpeed?: PlaybackSpeed;
   zoom?: number;
   onZoomChange?: (next: number) => void;
 };
 
-export function MemoryCanvas({ scene, selectedId, onSelect, stepIndex, playbackSpeed, zoom = 1, onZoomChange }: MemoryCanvasProps) {
+export function MemoryCanvas({ scene, selectedId, onSelect, stepIndex, instant = false, playbackSpeed, zoom = 1, onZoomChange }: MemoryCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const prevSceneRef = useRef<MemoryScene | null>(null);
   const prevStepRef = useRef<number | null>(null);
@@ -50,13 +51,13 @@ export function MemoryCanvas({ scene, selectedId, onSelect, stepIndex, playbackS
     const prevScene = prevSceneRef.current;
     const sceneChanged = prevScene !== scene;
 
-    // Snap when: first render, reduced-motion, or user jumped multiple steps
+    // Snap when: first render, reduced-motion, Shift-stepped, or user jumped multiple steps
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const stepDelta =
       stepIndex !== undefined && prevStepRef.current !== null
         ? Math.abs(stepIndex - prevStepRef.current)
         : 0;
-    const shouldSnap = !sceneChanged || !prevScene || prefersReducedMotion || stepDelta > 1;
+    const shouldSnap = !sceneChanged || !prevScene || prefersReducedMotion || stepDelta > 1 || instant;
 
     if (shouldSnap) {
       cancelAnimationFrame(rafRef.current);
@@ -92,7 +93,7 @@ export function MemoryCanvas({ scene, selectedId, onSelect, stepIndex, playbackS
     idlePaintRef.current = null;
     rafRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [scene, selectedId, stepIndex, playbackSpeed]);
+  }, [scene, selectedId, stepIndex, instant, playbackSpeed]);
 
   useEffect(() => {
     zoomRef.current = zoom;

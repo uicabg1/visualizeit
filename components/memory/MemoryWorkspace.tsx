@@ -33,6 +33,7 @@ export function MemoryWorkspace() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [instantStep, setInstantStep] = useState(false);
   const isInitialMountRef = useRef(true);
   const overlayDismissRef = useRef(false);
 
@@ -111,9 +112,11 @@ export function MemoryWorkspace() {
         setIsPlaying((c) => !c);
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
+        if (e.shiftKey) setInstantStep(true);
         setStepIndex((c) => clampStep(c + 1, maxStep));
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
+        if (e.shiftKey) setInstantStep(true);
         setStepIndex((c) => clampStep(c - 1, maxStep));
       } else if (e.key === "f" || e.key === "F") {
         e.preventDefault();
@@ -126,6 +129,11 @@ export function MemoryWorkspace() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [maxStep, isFullscreen, setIsPlaying, setStepIndex]);
+
+  // Shift-step flag lives one commit: child canvas effect consumes it first, then clears.
+  useEffect(() => {
+    if (instantStep) setInstantStep(false);
+  }, [instantStep]);
 
   const handleStepChange = (nextStep: number) => {
     setStepIndex(clampStep(nextStep, maxStep));
@@ -256,6 +264,7 @@ export function MemoryWorkspace() {
             </button>
           </div>
           <MemoryCanvas
+            instant={instantStep}
             onZoomChange={setZoom}
             onSelect={handleSelect}
             playbackSpeed={playbackSpeed}

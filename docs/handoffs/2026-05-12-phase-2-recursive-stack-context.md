@@ -816,3 +816,13 @@ Canvas zoom in/out — first task outside the (now-complete, minus gated T-REFAC
 - Files: 5 (2 new + 3 edit) — within guard. Reviewer follow-ups skipped (scope): trackpad pinch proportional deltaY step; multiplicative zoom curve.
 - Verify: zoom.test 4/4 · `pnpm test` 90 green (+4) · eslint 0 · `pnpm build` clean · Playwright smoke 1280×900: +→120% CSS width ×1.2 asserted, ctrl+wheel→110%, dblclick→100%, clamp 50/200% with disabled btns, step-nav while zoomed, 0 console errors. Screenshots `tmp-screenshots/zoom-120.png`, `zoom-step-110.png`. Not deployed.
 - Next: T-REFACTOR-12 (P3, allocator model — needs explicit approval) or next P1 (T-UX-3 may already be covered by `interpolateScene` — audit before picking; then T-CONTENT-2).
+
+## What Was Done (T-UX-3) — 2026-10-03 — branch `feature/t-ux-3`
+
+Animated step transitions (morph) — acceptance audit per T-UX-2 note: lerp/fade-in/fade-out/reduced-motion already shipped via `interpolateScene.ts` (opacity `t`/`1−t` on nodes/frames/blocks/edges/badges) + `MemoryCanvas` rAF tween (`:70-93`, snap paths: first render, reduced-motion, `stepDelta>1`). Sole unmet criterion: "disabled when user holds Shift (instant)".
+
+- `MemoryCanvas.tsx`: `instant?: boolean` prop → `shouldSnap` (`:59`) `|| instant`; added to effect deps (`:94`). Comment updated.
+- `MemoryWorkspace.tsx`: `instantStep` state (`:37`); `e.shiftKey` on ArrowRight/Left (`:112-120`) sets flag same batched commit as `setStepIndex` → child effect consumes snap; parent one-shot reset effect (`:133-136`) clears flag next commit (child-before-parent effect order guarantees canvas sees `true` first). Passed `instant={instantStep}` to canvas (`:267`).
+- Files touched: 2. No tween-engine change, no new tests possible (component-level flag; covered by smoke).
+- Verify: `pnpm test` 90 green · eslint 0 problems · `pnpm build` clean · Playwright smoke 1280×800 `?scenario=buffer-overflow&step=1`: ArrowRight→Shift+ArrowRight→URL `step=3`, Shift+ArrowLeft→`step=2`, 0 console errors, screenshot `/tmp/t-ux-3-smoke.png`.
+- Next: first open P1 → T-CONTENT-2 (stack arrays `int arr[5]`; T-REFACTOR-10 `stackSlot.index` pre-wired for it) or T-EDU-1/T-TECH-1. T-REFACTOR-12 stays gated.
