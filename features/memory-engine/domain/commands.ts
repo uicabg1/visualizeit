@@ -41,8 +41,10 @@ export type AssignPointerCommand = BaseCommand & {
 
 export type WriteFieldCommand = BaseCommand & {
   type: "WRITE_FIELD";
-  blockId: string;
-  fieldName: string;
+  // T-CONTENT-2a: heap form = blockId + fieldName; stack form = target (stackSlot, index)
+  blockId?: string;
+  fieldName?: string;
+  target?: ValueTarget;
   value: MemoryValue;
 };
 
@@ -100,7 +102,7 @@ export const describeCommand = (command: MemoryCommand): string => {
     case "ASSIGN_POINTER":
       return `Assign ${describeTarget(command.target)}`;
     case "WRITE_FIELD":
-      return `Write ${command.blockId}.${command.fieldName}`;
+      return command.target ? `Write ${describeTarget(command.target)}` : `Write ${command.blockId}.${command.fieldName}`;
     case "WRITE_ARRAY_INDEX":
       return `Write ${command.blockId}[${command.index}]`;
     case "READ_VALUE":

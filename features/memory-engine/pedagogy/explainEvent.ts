@@ -48,7 +48,11 @@ export const explainEvent = (snapshot: MemorySnapshot): string[] => {
   }
 
   if (command?.type === "WRITE_FIELD") {
-    explanations.push(`Field ${command.fieldName} written to heap block.`);
+    if (command.target) {
+      explanations.push(`Value written to stack slot ${describeTarget(command.target)} — arrays on the stack are plain frame variables.`);
+    } else {
+      explanations.push(`Field ${command.fieldName} written to heap block.`);
+    }
   }
 
   if (command?.type === "WRITE_ARRAY_INDEX") {

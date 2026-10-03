@@ -1,8 +1,8 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-10-03 — Refactor Queue T-REFACTOR-1→12 COMPLETE except T12 (P3, needs explicit approval). T-UX-2 ✅ (canvas zoom) · T-UX-3 ✅ (Shift=instant step; morph tween already shipped via interpolateScene). One task = one branch, token-saving rules
+**Last updated:** 2026-10-03 — Refactor Queue COMPLETE except T12 (P3, gated). T-CONTENT-2 → SPLIT 2a ✅ (engine unlock, `refactor/t-content-2a`) + 2b open (fixture). T-UX-2 ✅ · T-UX-3 ✅. One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
-**Tests:** 90 green · `pnpm test`
+**Tests:** 92 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
 
 ---
@@ -250,10 +250,16 @@ Deploy: `vercel deploy --prod -y --scope uicabgadiel67-1227s-projects` (CLI auth
 
 - `buffer-overflow` scenario added. `BUFFER_OVERFLOW` diagnostic type added to engine. `capacity` field on `HeapBlock` tracks initial field count; `WRITE_FIELD` emits overflow when index ≥ capacity. Explanation panel shows "Buffer overflow — write past the end of a fixed-size buffer corrupts adjacent memory." 49 tests green.
 
-### T-CONTENT-2 — Arrays on stack (`int arr[5]`) · **P1**
+### ~~T-CONTENT-2 — Arrays on stack (`int arr[5]`)~~ · **SPLIT 2026-10-03** → 2a + 2b (fix surface = 6 files > 5-file guard) · **P1**
 
+### ~~T-CONTENT-2a — Stack-array engine unlock~~ · **DONE 2026-10-03** (`refactor/t-content-2a`) — see handoff "What Was Done (T-CONTENT-2a)"
+
+- `WriteFieldCommand.target?: ValueTarget` (stack form); `findStackSlot` index→`name[i]` resolution (index>0 strict, no scalar aliasing); `stackSlotWriteBlocked` gate removed; validator + pedagogy mirrored. 92 tests green, goldens byte-identical.
+
+### T-CONTENT-2b — `stack-array` scenario fixture · **P1 · open**
+
+- Declare slots `arr[0]`..`arr[4]` (initialValues), WRITE_FIELD `{kind:"stackSlot", name:"arr", index:i}` mutations, READ_VALUE through slots; Fundamentals, regions `{stack:true, heap:false}`. Files: `fixtures.ts` + `memoryEngine.test.ts` (golden hash tables, "ships eight→nine" `:143`, scenario test). Contrast copy vs `pointer-arithmetic` (heap array).
 - **Concept:** Stack-allocated fixed array, contrast with heap array from `pointer-arithmetic`.
-- **Engine consideration:** Treat as a stack variable with N slots; reuse `WRITE_FIELD` against a stack target instead of a heap target. May require extending `target.kind` to `"stackArrayIndex"` — check existing types in `simulation/types.ts`.
 - **Category:** Fundamentals.
 
 ### T-CONTENT-3 — Double pointer (`**ptr`) · **P1**

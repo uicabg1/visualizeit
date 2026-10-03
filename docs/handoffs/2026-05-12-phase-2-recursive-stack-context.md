@@ -826,3 +826,17 @@ Animated step transitions (morph) — acceptance audit per T-UX-2 note: lerp/fad
 - Files touched: 2. No tween-engine change, no new tests possible (component-level flag; covered by smoke).
 - Verify: `pnpm test` 90 green · eslint 0 problems · `pnpm build` clean · Playwright smoke 1280×800 `?scenario=buffer-overflow&step=1`: ArrowRight→Shift+ArrowRight→URL `step=3`, Shift+ArrowLeft→`step=2`, 0 console errors, screenshot `/tmp/t-ux-3-smoke.png`.
 - Next: first open P1 → T-CONTENT-2 (stack arrays `int arr[5]`; T-REFACTOR-10 `stackSlot.index` pre-wired for it) or T-EDU-1/T-TECH-1. T-REFACTOR-12 stays gated.
+
+## What Was Done (T-CONTENT-2a) — 2026-10-03 — branch `refactor/t-content-2a`
+
+Stack arrays engine unlock — T-CONTENT-2 **SPLIT → 2a + 2b** (full fix surface = 6 files > 5-file guard; T-REFACTOR-4 precedent). 2a = engine half; 2b = scenario fixture half (next session).
+
+- `domain/commands.ts`: `WriteFieldCommand` — `blockId`/`fieldName` now optional, new `target?: ValueTarget` (heap form = blockId+fieldName; stack form = stackSlot target). `describeCommand` WRITE_FIELD → `Write arr[2]` via `describeTarget` when target present (`:104`).
+- `simulation/memoryEngine.ts`: `findStackSlot` takes `index?` (`:92-109`): index>0 resolves **only** `name[i]` (no scalar aliasing → keeps T-REFACTOR-10 INVALID_TARGET test honest); undefined/0 → `name[0]` then `name` (scalar back-compat). Deleted `stackSlotWriteBlocked` gate + both call guards. WRITE_FIELD case (`:350`): `command.target` → `writeTarget(...)` + `fieldName` local for heap path.
+- `simulation/validateScenario.ts`: `checkTarget` mirrors engine index→`name[i]` resolution exactly; WRITE_FIELD case splits target/blockId paths.
+- `pedagogy/explainEvent.ts`: WRITE_FIELD stack branch → "Value written to stack slot arr[1] — arrays on the stack are plain frame variables."
+- `memoryEngine.test.ts`: +2 tests (index resolves to declared `arr[1]` var, value 99; unknown index 7 → 1× INVALID_TARGET, total).
+- Files touched: 5. Edits via cavecrew-builder (inline snippets + anchors); index-strictness + validator narrowing fixed inline after.
+- Verify: scoped vitest 46/46 · `pnpm test` 92 green (+2) · eslint 0 problems · `pnpm build` clean. No shipped scenario touched — djb2+sha256 goldens byte-identical. No UI → no Playwright.
+- **2b next:** new `stack-array` fixture (slots declared `arr[0]`..`arr[4]` w/ initialValues, WRITE_FIELD `{kind:"stackSlot", name:"arr", index:i}` mutations, READ_VALUE through slots; category Fundamentals; regions `{stack:true, heap:false}`) + `GOLDEN_SNAPSHOT_HASHES`/`GOLDEN_FINAL_SNAPSHOT_SHA256` entries for new id + "ships eight→nine" (`:143`) + scenario-specific test. ~2 files.
+- Next task after close: T-CONTENT-2b → then P1: T-CONTENT-3 (`**ptr`; `PointerValue.targetVariable` already pre-wired), T-EDU-1, T-TECH-1. T-REFACTOR-12 stays gated.
