@@ -1,6 +1,6 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-10-03 — Refactor Queue T-REFACTOR-1→12 COMPLETE except T12 (P3, needs explicit approval). T-UX-2 ✅ (canvas zoom). One task = one branch, token-saving rules
+**Last updated:** 2026-10-03 — Refactor Queue T-REFACTOR-1→12 COMPLETE except T12 (P3, needs explicit approval). T-UX-2 ✅ (canvas zoom) · T-UX-3 ✅ (Shift=instant step; morph tween already shipped via interpolateScene). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
 **Tests:** 90 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
@@ -219,7 +219,7 @@ Deploy: `vercel deploy --prod -y --scope uicabgadiel67-1227s-projects` (CLI auth
 - **Files likely affected:** `MemoryCanvas.tsx` (zoom state, wheel handler with `event.ctrlKey` or button-driven; multiply into existing transform), `MemoryWorkspace.tsx` (zoom buttons).
 - **Acceptance criteria:** `+` / `−` buttons or `Ctrl+wheel` adjust zoom 0.5×–2×. Hit-test still correct at any zoom (CSS-width / bounds-width ratio already handles this — verify). Reset button or double-click resets to 1×.
 
-### T-UX-3 — Animated step transitions (morph) · **P1**
+### ~~T-UX-3 — Animated step transitions (morph)~~ · **DONE 2026-10-03** (`feature/t-ux-3`) — see handoff "What Was Done (T-UX-3)" · **P1**
 
 - **Problem:** Stepping between snapshots is a hard cut. Frames jump. Pointers re-draw. Users lose continuity.
 - **Files likely affected:** `MemoryCanvas.tsx` — interpolate element positions between previous and current scene over ~200–300ms; tween only `transform` + `opacity`. Use `requestAnimationFrame` driven by a `transitionProgress` value.
@@ -345,3 +345,4 @@ Deploy: `vercel deploy --prod -y --scope uicabgadiel67-1227s-projects` (CLI auth
 - T-UX-1: Fullscreen canvas mode (`f` / Esc, navbar focus button).
 - T-CONTENT-1: `buffer-overflow` scenario + `BUFFER_OVERFLOW` diagnostic (`HeapBlock.capacity`, 49 tests).
 - T-UX-2: Canvas zoom 0.5×–2× (zoombar + Ctrl/Cmd+wheel + dblclick reset, hit-test zoom-invariant, iOS canvas-area guard, 90 tests).
+- T-UX-3: Animated step transitions — morph/lerp/fade already shipped via `interpolateScene` + canvas rAF; added Shift=instant step (flag → snap path), 90 tests.
