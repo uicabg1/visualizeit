@@ -1,6 +1,6 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-10-03 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅ T5 ✅ T6 ✅ T7 ✅ T8 ✅; T9 next, then T10–11 P2, T12 P3). One task = one branch, token-saving rules
+**Last updated:** 2026-10-03 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅ T5 ✅ T6 ✅ T7 ✅ T8 ✅ T9 ✅; T10 next, then T11 P2, T12 P3). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
 **Tests:** 73 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
@@ -101,7 +101,7 @@ Approved 2026-09-28 after full-project review. Goal: make "add new scenario" saf
 
 - `domain/snapshots.ts:31-45`: `cloneSnapshot`, `getSnapshotSummary` — zero consumers (leftover from Phase 1 debug view). `getFinalSnapshot` keep (test consumer). Delete both + grep-confirm 0 refs.
 
-### T-REFACTOR-9 — URL sync first-mount guard · **P2**
+### ~~T-REFACTOR-9 — URL sync first-mount guard~~ · **DONE 2026-10-03** (`refactor/t-refactor-9`) — see handoff "What Was Done (T-REFACTOR-9)" · **P2**
 
 - **Problem:** `MemoryWorkspace.tsx:117-123` rewrites clean `/` → `/?scenario=stack-frame-basics&step=0` on first mount.
 - **Fix:** skip replace when derived params equal current URL (compare against `window.location.search` inside the debounce).
