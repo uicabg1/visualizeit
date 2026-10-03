@@ -294,6 +294,39 @@ describe("memory engine simulation", () => {
       }
     }
   });
+
+  it("stack arrays (T-CONTENT-2a): WRITE_FIELD to stackSlot index resolves to arr[i] variable", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main", label: "Enter main" },
+      { type: "DECLARE_VARIABLE", name: "arr[0]", dataType: "int", initialValue: { kind: "number", value: 10 }, label: "int arr[0]" },
+      { type: "DECLARE_VARIABLE", name: "arr[1]", dataType: "int", initialValue: { kind: "number", value: 20 }, label: "int arr[1]" },
+      { type: "WRITE_FIELD", target: { kind: "stackSlot", name: "arr", index: 1 }, value: { kind: "number", value: 99 }, label: "arr[1] = 99" },
+      { type: "READ_VALUE", source: { kind: "stackSlot", name: "arr", index: 0 }, label: "Read arr[0]" }
+    ];
+
+    const snapshots = runMemoryProgram(commands);
+    const invalid = snapshots.flatMap((snapshot) => snapshot.diagnostics).filter((diagnostic) => diagnostic.type === "INVALID_TARGET");
+
+    expect(invalid).toEqual([]);
+
+    const lastFrame = snapshots[snapshots.length - 1].stackFrames[snapshots[snapshots.length - 1].stackFrames.length - 1];
+    expect(lastFrame.variables.find((variable) => variable.name === "arr[1]")?.value).toEqual({ kind: "number", value: 99 });
+  });
+
+  it("stack arrays (T-CONTENT-2a): unknown stack slot index emits INVALID_TARGET, engine stays total", () => {
+    const commands: MemoryCommand[] = [
+      { type: "ENTER_FUNCTION", functionName: "main", label: "Enter main" },
+      { type: "WRITE_FIELD", target: { kind: "stackSlot", name: "arr", index: 7 }, value: { kind: "number", value: 1 }, label: "arr[7] = 1" }
+    ];
+
+    let snapshots: ReturnType<typeof runMemoryProgram> = [];
+    expect(() => {
+      snapshots = runMemoryProgram(commands);
+    }).not.toThrow();
+
+    const invalid = snapshots.flatMap((snapshot) => snapshot.diagnostics).filter((diagnostic) => diagnostic.type === "INVALID_TARGET");
+    expect(invalid.length).toBe(1);
+  });
 });
 
 const djb2 = (input: string): number => {

@@ -24,7 +24,14 @@ const checkBlock = (ctx: MutableFrames, blockId: string, step: number): void => 
 
 const checkTarget = (ctx: MutableFrames, target: ValueTarget, step: number): void => {
   if (target.kind === "variable" || target.kind === "stackSlot") {
-    if (!ctx.frames.some((frame) => frame.has(target.name))) {
+    const names =
+      target.kind === "stackSlot" && target.index !== undefined
+        ? target.index === 0
+          ? [`${target.name}[0]`, target.name]
+          : [`${target.name}[${target.index}]`]
+        : [target.name];
+
+    if (!ctx.frames.some((frame) => names.some((name) => frame.has(name)))) {
       ctx.issues.push(`step ${step}: references undeclared variable "${target.name}"`);
     }
     return;
@@ -86,6 +93,12 @@ const walkCommands = (commands: MemoryCommand[]): string[] => {
         return;
 
       case "WRITE_FIELD":
+        if (command.target) {
+          checkTarget(ctx, command.target, step);
+        } else {
+          checkBlock(ctx, command.blockId ?? "", step);
+        }
+        break;
       case "WRITE_ARRAY_INDEX":
         checkBlock(ctx, command.blockId, step);
         return;

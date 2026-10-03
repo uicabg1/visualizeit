@@ -91,14 +91,16 @@ const currentFrame = (state: MutableState): StackFrame | null => state.stackFram
 
 const findStackSlot = (
   state: MutableState,
-  slot: { frameHint?: string; name: string }
+  slot: { frameHint?: string; name: string; index?: number }
 ): { frame: StackFrame; variable: StackVariable } | null => {
   for (const frame of [...state.stackFrames].reverse()) {
     if (slot.frameHint !== undefined && frame.id !== slot.frameHint && frame.functionName !== slot.frameHint) {
       continue;
     }
 
-    const variable = frame.variables.find((candidate) => candidate.name === slot.name);
+    const candidates =
+      slot.index === undefined || slot.index === 0 ? [`${slot.name}[${slot.index ?? 0}]`, slot.name] : [`${slot.name}[${slot.index}]`];
+    const variable = frame.variables.find((candidate) => candidates.includes(candidate.name));
 
     if (variable) {
       return { frame, variable };
@@ -106,20 +108,6 @@ const findStackSlot = (
   }
 
   return null;
-};
-
-const stackSlotWriteBlocked = (state: MutableState, target: { index?: number; name: string; kind: string }): boolean => {
-  if (target.index === undefined || target.index === 0) {
-    return false;
-  }
-
-  addEventDiagnostic(
-    state,
-    createDiagnostic("INVALID_TARGET", "error", "Stack arrays are not modelled yet; only slot 0 of a scalar stack variable is addressable.", {
-      label: target.name
-    })
-  );
-  return true;
 };
 
 const defaultValueFor = (dataType: string): MemoryValue => {
@@ -150,10 +138,6 @@ const readTarget = (state: MutableState, target: ValueTarget): MemoryValue => {
   }
 
   if (target.kind === "stackSlot") {
-    if (stackSlotWriteBlocked(state, target)) {
-      return { kind: "null" };
-    }
-
     const slot = findStackSlot(state, target);
 
     if (!slot) {
@@ -207,10 +191,6 @@ const writeTarget = (state: MutableState, target: ValueTarget, value: MemoryValu
   }
 
   if (target.kind === "stackSlot") {
-    if (stackSlotWriteBlocked(state, target)) {
-      return;
-    }
-
     const slot = findStackSlot(state, target);
 
     if (!slot) {
@@ -363,6 +343,12 @@ const applyCommand = (state: MutableState, command: MemoryCommand, stepIndex: nu
     }
 
     case "WRITE_FIELD": {
+      if (command.target) {
+        writeTarget(state, command.target, cloneValue(command.value));
+        return;
+      }
+
+      const fieldName = command.fieldName ?? "";
       const block = state.heapBlocks.find((candidate) => candidate.id === command.blockId);
 
       if (!block) {
@@ -386,20 +372,20 @@ const applyCommand = (state: MutableState, command: MemoryCommand, stepIndex: nu
         return;
       }
 
-      const field = block.fields.find((candidate) => candidate.name === command.fieldName);
+      const field = block.fields.find((candidate) => candidate.name === fieldName);
 
       if (field) {
         field.value = cloneValue(command.value);
       } else {
         if (block.capacity > 0) {
-          const indexMatch = command.fieldName.match(/^\[(\d+)\]$/);
+          const indexMatch = fieldName.match(/^\[(\d+)\]$/);
           if (indexMatch) {
             const index = parseInt(indexMatch[1], 10);
             if (index >= block.capacity) {
               addEventDiagnostic(
                 state,
                 createDiagnostic("BUFFER_OVERFLOW", "error",
-                  `Buffer overflow — write to ${command.fieldName} exceeds declared capacity of ${block.capacity}.`,
+                  `Buffer overflow — write to ${fieldName} exceeds declared capacity of ${block.capacity}.`,
                   { id: block.id, label: block.label }
                 )
               );
@@ -407,7 +393,7 @@ const applyCommand = (state: MutableState, command: MemoryCommand, stepIndex: nu
           }
         }
         block.fields.push({
-          name: command.fieldName,
+          name: fieldName,
           dataType: "unknown",
           value: cloneValue(command.value)
         });
