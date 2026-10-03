@@ -1,8 +1,8 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-10-03 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅ T5 ✅ T6 ✅ T7 ✅ T8 ✅ T9 ✅ T10 ✅; T11 next, then T12 P3). One task = one branch, token-saving rules
+**Last updated:** 2026-10-03 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅ T5 ✅ T6 ✅ T7 ✅ T8 ✅ T9 ✅ T10 ✅ T11 ✅; T12 P3 = last, needs explicit approval). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
-**Tests:** 77 green · `pnpm test`
+**Tests:** 86 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
 
 ---
@@ -114,7 +114,7 @@ Approved 2026-09-28 after full-project review. Goal: make "add new scenario" saf
 - **Order:** land BEFORE first scenario that needs it, then **snapshot schema is frozen** → Phase 3 parity target. ADR-002 note if semantics change.
 - **Acceptance:** all 8 current snapshots byte-identical (union additions optional-only); new tests with `**pp` fixture (no scenario UI needed).
 
-### T-REFACTOR-11 — Golden parity vectors · **P2 · WASM harness**
+### ~~T-REFACTOR-11 — Golden parity vectors~~ · **DONE 2026-10-03** (`refactor/t-refactor-11`) — see handoff "What Was Done (T-REFACTOR-11)" · **P2 · WASM harness**
 
 - **Fix:** `memoryEngine.test.ts` addition: for each of 8 scenarios run engine, `JSON.stringify(final snapshot)` hash pinned in table (or `__snapshots__`-style file in test dir). Also assert JSON round-trip equality per snapshot (serializability invariant — worker/WASM boundary requires it; `event.command` currently serializable, keep it).
 - **Payoff:** regression net for every new scenario + ready-made TS↔WASM parity harness for Phase 3. Pure test, zero product risk.
