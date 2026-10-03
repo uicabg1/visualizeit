@@ -74,6 +74,10 @@ export const describeTarget = (target: ValueTarget): string => {
     return target.name;
   }
 
+  if (target.kind === "stackSlot") {
+    return target.index === undefined ? target.name : `${target.name}[${target.index}]`;
+  }
+
   return `${target.blockId}.${target.fieldName}`;
 };
 
