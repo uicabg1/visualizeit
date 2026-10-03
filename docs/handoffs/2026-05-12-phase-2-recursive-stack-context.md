@@ -762,3 +762,13 @@ tweenRenderModel complete contract — optional-field landmine defused.
 - `interpolateScene.test.ts` — new describe `tweenRenderModel — non-tweenable field passthrough (T-REFACTOR-7)`: lanes + released ghosts present at t=0.5; passthrough holds at t=0/t=1. 11 → 13 tests.
 - Verify: scoped vitest 13 green → `pnpm test` 73 green (5 files) · eslint `app components features` 0 problems · `pnpm build` clean (/ = 15.8 kB). Playwright smoke (dev): deep-link recursive-stack, 4 step-throughs w/ canvas pixel probes mid-tween (non-blank at each `t<1` frame incl. ghost-release zone 7→12/12), step sync, console 0 errors.
 - Next: T-REFACTOR-8 (P2, dead code prune).
+
+## What Was Done (T-REFACTOR-8) — 2026-10-03 — branch `refactor/t-refactor-8`
+
+Dead code prune — Phase 1 debug-view leftovers removed.
+
+- `domain/snapshots.ts:31-45` — deleted `cloneSnapshot` + `getSnapshotSummary` (zero consumers). `getFinalSnapshot` kept (lives in `memoryEngine.ts`, test consumers in `explainEvent.test.ts` — untouched).
+- Grep-confirm repo-wide after delete: 0 code refs (only backlog task text). No `snapshots.test.ts` existed → no scoped vitest file; types/imports above lines 1-29 still used, retained.
+- Files touched: 1 (+2 docs). Edit via cavecrew-builder, anchors + snippet inline.
+- Verify: `pnpm test` 73 green (5 files) · eslint `app components features` 0 problems · `pnpm build` clean. No UI touched → no smoke.
+- Next: T-REFACTOR-9 (P2, URL sync first-mount guard).
