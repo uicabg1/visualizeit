@@ -20,12 +20,18 @@ export function useUrlState() {
 
 export function useUrlSync(scenarioId: string, activeStepIndex: number) {
   const router = useRouter();
+  const firstScenarioId = memoryEngineScenarios[0]?.id ?? "";
 
   useEffect(() => {
     const timer = setTimeout(() => {
+      const current = new URLSearchParams(window.location.search);
+      const currentScenario = current.get("scenario") ?? firstScenarioId;
+      const parsedStep = parseInt(current.get("step") ?? "", 10);
+      const currentStep = isNaN(parsedStep) || parsedStep < 0 ? 0 : parsedStep;
+      if (currentScenario === scenarioId && currentStep === activeStepIndex) return;
       const params = new URLSearchParams({ scenario: scenarioId, step: String(activeStepIndex) });
       router.replace(`/?${params.toString()}`);
     }, 150);
     return () => clearTimeout(timer);
-  }, [scenarioId, activeStepIndex, router]);
+  }, [scenarioId, activeStepIndex, firstScenarioId, router]);
 }

@@ -772,3 +772,14 @@ Dead code prune — Phase 1 debug-view leftovers removed.
 - Files touched: 1 (+2 docs). Edit via cavecrew-builder, anchors + snippet inline.
 - Verify: `pnpm test` 73 green (5 files) · eslint `app components features` 0 problems · `pnpm build` clean. No UI touched → no smoke.
 - Next: T-REFACTOR-9 (P2, URL sync first-mount guard).
+
+## What Was Done (T-REFACTOR-9) — 2026-10-03 — branch `refactor/t-refactor-9`
+
+URL sync first-mount guard — clean `/` no longer rewritten to `/?scenario=...&step=0`.
+
+- Pinned anchors `MemoryWorkspace.tsx:117-123` were stale (URL sync lives in `components/memory/hooks/useUrlState.ts:21-31`, extracted in T-REFACTOR-4a). Edited `useUrlSync` there instead.
+- Fix: inside the 150ms debounce, parse `window.location.search`; treat absent `scenario`/`step` as defaults (first fixture id / 0, same semantics as `useUrlState`); skip `router.replace` when derived state equals current URL. Deps add `firstScenarioId`.
+- Acceptance verified via Playwright smoke (webapp-testing, `pnpm dev` :3000): `/` stays `/` · `?scenario=buffer-overflow&step=4` restores · ArrowRight → URL `step=5` · 0 console errors.
+- Files touched: 1 (+2 docs). Edit via cavecrew-builder, anchors + snippet inline. No test file for hook → no scoped vitest target.
+- Verify: `pnpm test` 73 green · eslint `app components features` 0 problems · `pnpm build` clean.
+- Next: T-REFACTOR-10 (P2, MemoryRef target model — schema freeze for WASM).
