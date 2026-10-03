@@ -1,6 +1,6 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-10-03 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅ T5 ✅ T6 ✅ T7 ✅; T8 next, then T9–11 P2, T12 P3). One task = one branch, token-saving rules
+**Last updated:** 2026-10-03 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅ T5 ✅ T6 ✅ T7 ✅ T8 ✅; T9 next, then T10–11 P2, T12 P3). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
 **Tests:** 73 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
@@ -97,7 +97,7 @@ Approved 2026-09-28 after full-project review. Goal: make "add new scenario" saf
 - **Fix:** `tweenRenderModel` (rendering/interpolateScene.ts) passes through all non-tweenable fields itself; delete patch in canvas. Keep t=1 direct-paint path.
 - **Acceptance:** `interpolateScene.test.ts` adds case asserting lanes/ghosts present at t=0.5; step-through smoke with ghost frames visible mid-tween.
 
-### T-REFACTOR-8 — Dead code prune · **P2**
+### ~~T-REFACTOR-8 — Dead code prune~~ · **DONE 2026-10-03** (`refactor/t-refactor-8`) — see handoff "What Was Done (T-REFACTOR-8)" · **P2**
 
 - `domain/snapshots.ts:31-45`: `cloneSnapshot`, `getSnapshotSummary` — zero consumers (leftover from Phase 1 debug view). `getFinalSnapshot` keep (test consumer). Delete both + grep-confirm 0 refs.
 
