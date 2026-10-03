@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { explainEvent } from "@/features/memory-engine/pedagogy/explainEvent";
 import type { MemorySceneSelectable } from "@/features/memory-engine/rendering/canvasTypes";
 import { layoutMemoryScene } from "@/features/memory-engine/rendering/layoutMemoryScene";
+import { clampZoom, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP } from "@/features/memory-engine/rendering/zoom";
 import { memoryEngineScenarios } from "@/features/memory-engine/simulation/fixtures";
 import { runMemoryProgram } from "@/features/memory-engine/simulation/memoryEngine";
 import { ExplanationPanel, type LearningTab } from "./ExplanationPanel";
@@ -31,6 +32,7 @@ export function MemoryWorkspace() {
   const [activeTab, setActiveTab] = useState<LearningTab>("code");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [zoom, setZoom] = useState(1);
   const isInitialMountRef = useRef(true);
   const overlayDismissRef = useRef(false);
 
@@ -225,12 +227,42 @@ export function MemoryWorkspace() {
           tabIndex={isSidebarOpen ? 0 : -1}
         />
         <div className="memory-workspace__canvas-area" ref={canvasAreaRef}>
+          <div className="memory-canvas-zoombar">
+            <button
+              type="button"
+              className="memory-canvas-zoombar__btn"
+              aria-label="Zoom out"
+              disabled={zoom <= MIN_ZOOM}
+              onClick={() => setZoom(clampZoom(zoom - ZOOM_STEP))}
+            >
+              −
+            </button>
+            <button
+              type="button"
+              className="memory-canvas-zoombar__btn"
+              aria-label={`Reset zoom (currently ${Math.round(zoom * 100)}%)`}
+              onClick={() => setZoom(1)}
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              type="button"
+              className="memory-canvas-zoombar__btn"
+              aria-label="Zoom in"
+              disabled={zoom >= MAX_ZOOM}
+              onClick={() => setZoom(clampZoom(zoom + ZOOM_STEP))}
+            >
+              +
+            </button>
+          </div>
           <MemoryCanvas
+            onZoomChange={setZoom}
             onSelect={handleSelect}
             playbackSpeed={playbackSpeed}
             scene={activeScene}
             selectedId={selectedId}
             stepIndex={activeStepIndex}
+            zoom={zoom}
           />
           <StepBanner
             event={activeSnapshot.event}

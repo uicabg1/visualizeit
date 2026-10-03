@@ -1,8 +1,8 @@
 # VisualizeIT — Backlog (Phase 2.5 → Phase 3)
 
-**Last updated:** 2026-10-03 — Refactor Queue T-REFACTOR-1→12 (T1 ✅ T2 ✅ T3 ✅ T4a ✅ T4b ✅ T5 ✅ T6 ✅ T7 ✅ T8 ✅ T9 ✅ T10 ✅ T11 ✅; T12 P3 = last, needs explicit approval). One task = one branch, token-saving rules
+**Last updated:** 2026-10-03 — Refactor Queue T-REFACTOR-1→12 COMPLETE except T12 (P3, needs explicit approval). T-UX-2 ✅ (canvas zoom). One task = one branch, token-saving rules
 **Live:** https://visualizeit-two.vercel.app
-**Tests:** 86 green · `pnpm test`
+**Tests:** 90 green · `pnpm test`
 **Build:** `pnpm build` · Route `/` ~15.4 kB
 
 ---
@@ -213,7 +213,7 @@ Deploy: `vercel deploy --prod -y --scope uicabgadiel67-1227s-projects` (CLI auth
 
 - Focus button in navbar, `f` key toggles, `Esc` restores. Sidebar + panel hidden via `.is-fullscreen` CSS class on `.memory-workspace__main`. Works at ≥768px, tablet drawer unaffected.
 
-### T-UX-2 — Canvas zoom in/out · **P1**
+### ~~T-UX-2 — Canvas zoom in/out~~ · **DONE 2026-10-03** (`feature/t-ux-2`) — see handoff "What Was Done (T-UX-2)" · **P1**
 
 - **Problem:** Dense scenes (linked-list, recursive-stack peak) are hard to read at low container widths.
 - **Files likely affected:** `MemoryCanvas.tsx` (zoom state, wheel handler with `event.ctrlKey` or button-driven; multiply into existing transform), `MemoryWorkspace.tsx` (zoom buttons).
@@ -344,3 +344,4 @@ Deploy: `vercel deploy --prod -y --scope uicabgadiel67-1227s-projects` (CLI auth
 - T17b: Phone gate (<768px) + `/about` mobile audit.
 - T-UX-1: Fullscreen canvas mode (`f` / Esc, navbar focus button).
 - T-CONTENT-1: `buffer-overflow` scenario + `BUFFER_OVERFLOW` diagnostic (`HeapBlock.capacity`, 49 tests).
+- T-UX-2: Canvas zoom 0.5×–2× (zoombar + Ctrl/Cmd+wheel + dblclick reset, hit-test zoom-invariant, iOS canvas-area guard, 90 tests).

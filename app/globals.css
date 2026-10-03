@@ -576,9 +576,14 @@ select {
   overflow: auto;
   background: var(--bg-surface);
   position: relative;
+  box-shadow: var(--shadow-elevated);
+}
+
+.memory-canvas-viewport {
+  min-width: 100%;
+  min-height: 100%;
   display: grid;
   place-items: center;
-  box-shadow: var(--shadow-elevated);
 }
 
 .memory-canvas-shell::before {
@@ -594,6 +599,41 @@ select {
 
 .memory-canvas {
   display: block;
+}
+
+.memory-canvas-zoombar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.memory-canvas-zoombar__btn {
+  min-width: 30px;
+  height: 26px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.memory-canvas-zoombar__btn:hover:not(:disabled) {
+  color: var(--accent-amber);
+  background: var(--accent-amber-dim);
+  border-color: var(--accent-amber-border);
+}
+
+.memory-canvas-zoombar__btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* ─── Welcome overlay (fullscreen title card) ─── */
