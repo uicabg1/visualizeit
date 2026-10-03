@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 
 import type { MemoryCommand } from "../domain/commands";
 import type { DiagnosticType } from "../domain/diagnostics";
@@ -454,6 +455,40 @@ describe("MemoryRef target model (T-REFACTOR-10)", () => {
       { type: "DECLARE_VARIABLE", name: "arr", dataType: "int" },
       { type: "ASSIGN_POINTER", target: { kind: "stackSlot", name: "arr", index: 2 }, source: { kind: "null" } }
     ])).toContain("INVALID_TARGET");
+  });
+});
+
+const sha256 = (value: string): string =>
+  createHash("sha256").update(value).digest("hex");
+
+describe("golden parity vectors (T-REFACTOR-11)", () => {
+  // sha256(JSON.stringify(finalSnapshot)) per scenario.
+  // When engine output changes intentionally, regenerate hashes + review diff.
+  const GOLDEN_FINAL_SNAPSHOT_SHA256: Record<string, string> = {
+    "stack-frame-basics": "45359cfd9b5becf2667cc23d4b9f79bd28303d1d848078e65e88f99d279f02f1",
+    "heap-allocation": "2eca49fb4c92260812bc9f3cf88c5513825369c633b3c3f05ae6b279ca5ccb22",
+    "struct-with-pointer": "e412d67b64aad45f1d446a6e5f54a8ecf1ccf3dcb3d02c01052b51e2ad453a56",
+    "pointer-arithmetic": "ea87309d7b0359c9ca76b6204d138fe2b4f5897f34992a53c601dfa79a43b7cc",
+    "recursive-stack": "6fd7938fba06b7a7f013cbfaf98b42fe37d4ead35db172c8b2fe3fe2acbdb0be",
+    "linked-list-traversal": "e6b504dc887b0a226e646320042798cb0c8093546dc95e9de518e4452178a296",
+    "buffer-overflow": "83b3d6c49db080da615cbf08bd62377a74042750459a06ca1afcb930d79d99fb",
+    "leak-and-dangling-pointer": "69407e557891da136eb6db1117238d19c7ac451c5084d62396e4b96f752dc664"
+  };
+
+  it.each(memoryEngineScenarios.map((scenario) => [scenario.id, scenario] as const))(
+    "final snapshot of scenario %s hashes to pinned vector",
+    (id: string, scenario: MemoryScenario) => {
+      const finalSnapshot = getFinalSnapshot(runMemoryProgram(scenario.commands));
+      expect(sha256(JSON.stringify(finalSnapshot))).toBe(GOLDEN_FINAL_SNAPSHOT_SHA256[id]);
+    }
+  );
+
+  it("every snapshot of every scenario round-trips through JSON (serializability invariant for worker/WASM boundary)", () => {
+    for (const scenario of memoryEngineScenarios) {
+      runMemoryProgram(scenario.commands).forEach((snapshot) => {
+        expect(JSON.parse(JSON.stringify(snapshot))).toEqual(snapshot);
+      });
+    }
   });
 });
 

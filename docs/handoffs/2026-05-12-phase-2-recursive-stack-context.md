@@ -794,3 +794,14 @@ MemoryRef target model — snapshot/target schema frozen for WASM parity (Phase 
 - Files touched: 5 (types, commands, memoryEngine, validateScenario, memoryEngine.test). Edits via cavecrew-builder, snippets + anchors inline.
 - Verify: scoped vitest 35/35 · `pnpm test` 77 green (+4: stackSlot round-trip, `**pp` targetVariable + JSON round-trip, frameHint recursion, INVALID_TARGET totals) · eslint 0 problems · `pnpm build` clean (route `/` 16.2 kB). No UI touched → no Playwright.
 - Next: T-REFACTOR-11 (P2, golden parity vectors — pure test).
+
+## What Was Done (T-REFACTOR-11) — 2026-10-03 — branch `refactor/t-refactor-11`
+
+Golden parity vectors — WASM harness groundwork. Pure test, zero product risk.
+
+- `memoryEngine.test.ts` += describe "golden parity vectors (T-REFACTOR-11)" (`:464`): per-scenario table `GOLDEN_FINAL_SNAPSHOT_SHA256` (`:467`) pinning `sha256(JSON.stringify(finalSnapshot))` for all 8 scenarios (`it.each` over `[id, scenario]` tuples — vitest spreads rows as args, callback `(id, scenario)`) + serializability invariant test: every snapshot of every scenario round-trips `JSON.parse(JSON.stringify(...))` → `toEqual` (worker/WASM boundary requirement).
+- Hashes generated via throwaway `goldenHash.gen.test.ts` (vitest + `node:crypto`, env node), written to JSON, pinned into table, temp file deleted. Regeneration path documented in table comment.
+- Relation to existing goldens: T-REFACTOR-2 djb2 table (`:309`, `{all, final, steps}`) stays as in-repo regression net; new sha256 vectors are the cross-language parity target for Phase 3 (djb2 = ad-hoc, 32-bit; sha256 = standard digest).
+- Files touched: 1 (memoryEngine.test.ts, +35 lines). Append via cavecrew-builder; hash-fill + it.each signature fix inline.
+- Verify: scoped vitest 44/44 · `pnpm test` 86 green (+9: 8 hash vectors + 1 round-trip) · eslint 0 problems · `pnpm build` clean. No UI touched → no Playwright.
+- Next: T-REFACTOR-12 (P3, allocator model — Phase 3 gate, needs explicit approval).
